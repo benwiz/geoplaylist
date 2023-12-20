@@ -6,6 +6,11 @@ Download your Spotify Extended history here https://www.spotify.com/ca-en/accoun
 Download your Google "Location History (Timeline)" here https://takeout.google.com/settings/takeout
 If you Scrobble your music into last.fm you can download your play history here instead of using Spotify https://benjaminbenben.com/lastfm-to-csv/
 
+# Spotify APP Credentials (needed for Spotify Web API)
+
+Client id `641da771c201429da8ec99a659aa5ff6`
+Client secret `3eac5083da4d4be0804ebdb0cf116c01` (don't make it public)
+
 # API
 
 POST /upload (or similarly named)
