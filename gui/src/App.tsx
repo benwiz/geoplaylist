@@ -14,7 +14,7 @@ const App = () => {
     // Grab ascii art from .txt
     const fetchAsciiArt = async () => {
       try {
-        setAsciiArt(await (await fetch('/@/public/jurassic-park.txt')).text());
+        setAsciiArt(await (await fetch('./jurassic_park.txt')).text());
       } catch (error) {
         console.error('Error fetching ASCII art:', error);
       }
