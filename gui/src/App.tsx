@@ -1,30 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import Loading from './components/loading/Loading';
+// import React, { useState, useEffect } from 'react';
+import { effect, signal } from '@preact/signals-react';
+import { asciiArt } from './components/AsciiThing/AsciiThing';
+import Loading from './components/Loading/Loading';
 
 const App = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [asciiArt, setAsciiArt] = useState('');
+  const isLoading = signal(true);
 
-  useEffect(() => {
-    // Simulate a 2-second loading state when the component first mounts
-    const initialLoadingTimeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
+  // const [isLoadingHook, setIsLoadingHook] = useState(true);
+  // const [asciiArt, setAsciiArt] = useState('');
 
-    // Grab ascii art from .txt
-    const fetchAsciiArt = async () => {
-      try {
-        setAsciiArt(await (await fetch('./jurassic_park.txt')).text());
-      } catch (error) {
-        console.error('Error fetching ASCII art:', error);
-      }
-    };
-    fetchAsciiArt();
+  // Simulate a 2-second loading state when the component first mounts
 
-    // Clean up timeout
-    return () => clearTimeout(initialLoadingTimeout);
-  }, []);
+  setTimeout(() => {
+    isLoading.value = false;
+    console.log('bad?', isLoading.value);
+  }, 2000);
 
+  // useEffect(() => {
+  //   // Simulate a 2-second loading state when the component first mounts
+  //   const initialLoadingTimeout = setTimeout(() => {
+  //     setIsLoadingHook(false);
+  //   }, 2000);
+
+  //   // Grab ascii art from .txt
+  //   const fetchAsciiArt = async () => {
+  //     try {
+  //       setAsciiArt(await (await fetch('./jurassic_park.txt')).text());
+  //     } catch (error) {
+  //       console.error('Error fetching ASCII art:', error);
+  //     }
+  //   };
+  //   fetchAsciiArt();
+
+  //   // Clean up timeout
+  //   return () => clearTimeout(initialLoadingTimeout);
+  // }, []);
+
+  //   return (
+  //     <>
+  //       {isLoadingHook ? (
+  //         <Loading />
+  //       ) : (
+  //         <div>
+  //           Welcome, to jurassic park
+  //           {asciiArt && <pre>{asciiArt}</pre>}
+  //         </div>
+  //       )}
+  //     </>
+  //   );
+  // };
+
+  console.log('ascii:', asciiArt.value);
   return (
     <>
       {isLoading ? (
@@ -32,7 +58,7 @@ const App = () => {
       ) : (
         <div>
           Welcome, to jurassic park
-          {asciiArt && <pre>{asciiArt}</pre>}
+          {asciiArt && <pre>{asciiArt.value}</pre>}
         </div>
       )}
     </>
