@@ -8,4 +8,4 @@ const fetchAsciiArt = async () => {
   }
 };
 
-export const asciiArt = signal(fetchAsciiArt());
+export const asciiArt = signal(await fetchAsciiArt());
