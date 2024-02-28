@@ -224,7 +224,7 @@
   (let [ ;; download data
         lastfm-recenttracks     (get-lastfm-recenttracks "lastfm-recenttracks-20231130.json")
         google-location-records (get-google-location-records "google-location-records.json")
-        ;; parse data (TODO later optimization: use scicloj.ml.dataset for all this original pre-processing)
+        ;; parse data (TODO later optimization: use scicloj.ml.dataset for all this original pre-processing, it probably can do the join with location data very efficiently.)
         locations               (google-locations google-location-records)
         tracks                  (->> (lastfm-tracks lastfm-recenttracks)
                                      #_(into [] track-filter-xform))
