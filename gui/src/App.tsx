@@ -1,34 +1,36 @@
 // import React, { useState, useEffect } from 'react';
 // import { useEffect } from 'react';
-import { effect, signal } from '@preact/signals-react';
+
+// import { effect, signal } from '@preact/signals-react';
+import { useSignalEffect, useSignal } from '@preact/signals-react';
 import { asciiArt } from './components/AsciiThing/AsciiThing';
 import Loading from './components/Loading/Loading';
 
 const App = () => {
-  const isLoading = signal<boolean>(true);
-  effect(() => {
+  const isLoading = useSignal<boolean>(true);
+  useSignalEffect(() => {
     console.log('loading?', isLoading.value);
   });
 
-  let loading = null;
+  // let loading = null;
 
   // Simulate a 2-second loading state when the component first mounts
-  effect(() => {
+
+  useSignalEffect(() => {
     if (isLoading.value) {
       setTimeout(() => {
-        isLoading.value = false;
+        isLoading.value = !isLoading.peek();
         console.log('bad?', isLoading.value);
       }, 2000);
     }
-    loading = isLoading.value;
+    // loading = isLoading.value;
   });
 
   // console.log('ascii:', asciiArt.value);
   return (
     <>
-      {/* <span>sup?{isLoading.value.toString()}</span> */}
-      <span>sup?{loading.toString()}</span>
-      {loading ? (
+      <span>sup?{isLoading.value.toString()}</span>
+      {isLoading ? (
         <Loading />
       ) : (
         <div>
