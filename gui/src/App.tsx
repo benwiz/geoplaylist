@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Loading from './components/loading/Loading';
+import Loading from './components/Loading/Loading';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
