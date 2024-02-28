@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Loading from './components/loading/Loading';
-
+import Loading from './components/Loading/Loading';
+// import { fetchAsciiArt } from './components/AsciiThing/AsciiThing';
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [asciiArt, setAsciiArt] = useState('');
