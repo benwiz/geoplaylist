@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Loading from './components/Loading/Loading';
-// import { fetchAsciiArt } from './components/AsciiThing/AsciiThing';
-const App = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [asciiArt, setAsciiArt] = useState('');
+import fetchAsciiArt from './utility/asciiFetch';
+
+const App: React.FC = () => {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [asciiArt, setAsciiArt] = useState<string | null>(null);
 
   useEffect(() => {
     // Simulate a 2-second loading state when the component first mounts
@@ -12,14 +13,16 @@ const App = () => {
     }, 2000);
 
     // Grab ascii art from .txt
-    const fetchAsciiArt = async () => {
+    const fetchAsciiAndUpdateState = async () => {
       try {
-        setAsciiArt(await (await fetch('./jurassic_park.txt')).text());
+        const asciiTxt = await fetchAsciiArt();
+        setAsciiArt(asciiTxt);
       } catch (error) {
-        console.error('Error fetching ASCII art:', error);
+        console.log('bad ascii request');
+        setAsciiArt('no dinos here...');
       }
     };
-    fetchAsciiArt();
+    fetchAsciiAndUpdateState();
 
     // Clean up timeout
     return () => clearTimeout(initialLoadingTimeout);
