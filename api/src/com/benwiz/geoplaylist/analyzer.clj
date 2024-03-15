@@ -7,7 +7,8 @@
             [malli.registry :as mr]
             [scicloj.ml.core :as ml]
             [scicloj.ml.dataset :as ds]
-            [scicloj.ml.metamorph :as mm])
+            [scicloj.ml.metamorph :as mm]
+            [net.cgrand.xforms :as xf])
   (:import (java.time OffsetDateTime ZoneOffset LocalDateTime)
            (java.time.format DateTimeFormatter)
            (java.util Date UUID)))
@@ -17,8 +18,11 @@
 ;; - consider using last.fm instead of spotify, but not everyone scrobbles spotify
 ;; - it would be interesting to do a blog post on the difference between spotify and last.fm
 ;; - make it pluggable, just allow using either of them, they should both be easy imports
+;; - it would be cool if time was considered in the clustering
+;; - :track/timestamp is more relevant than :loc/timestamp
+;; - I wonder if a vector of time parts [YYYY MM DD mm ss nn] would be better
 
-(mr/set-default-registry!
+(mr/set-default-registry! ;; TODO probably don't run this here
   (mr/composite-registry
     (m/default-schemas)
     (met/schemas)))
@@ -82,11 +86,10 @@
 (def results-validator (m/validator results-schema))
 (def results-explainer (m/explainer results-schema))
 
-
-
-(defonce google-location-records
+(defn get-google-location-records
+  [readable]
   (cheshire/parse-stream
-    (io/reader (io/resource "google-location-records.json"))
+    (io/reader readable)
     true))
 
 (defn google-locations
@@ -101,9 +104,10 @@
                   :timestamp (OffsetDateTime/parse timestamp)})))
         (reverse (:locations records))))
 
-(defonce lastfm-recenttracks
+(defn get-lastfm-recenttracks
+  [readable]
   (cheshire/parse-stream
-    (io/reader (io/resource "lastfm-recenttracks-20231130.json"))
+    (io/reader readable)
     (fn [k]
       (case k
         "@attr" :attr
@@ -116,7 +120,7 @@
         (comp
           (mapcat :track)
           (map (fn [{:keys [artist mbid album name url date]}]
-                 {:id        (or (not-empty mbid) (str (UUID/randomUUID)))
+                 {:id        (str "lastfm/" (or (not-empty mbid) (str (UUID/randomUUID))))
                   :timestamp (OffsetDateTime/of
                                (LocalDateTime/ofEpochSecond ;; Jumping through LocalDateTime seems dumb
                                  (Integer/parseInt (:uts date))
@@ -141,7 +145,7 @@
 
   )
 
-(defn nearest-location
+(defn nearest-location ;; TODO This is dropping wayyy more tracks than expected, I need to review this whole algorithm
   [initial-tracks initial-locations]
   (loop [track     (first initial-tracks)
          tracks    (rest initial-tracks)
@@ -200,118 +204,78 @@
       :else
       (assert false "Unknown case."))))
 
-(comment ;; Explore the joined data
+(defn track-play-count-filter-xform
+  "This filters for tracks that have at least N listens, alternative ideas include most-frequently-listened N tracks"
+  [n]
+  (comp
+    (xf/by-key :track/id (xf/into []))
+    (filter (fn [[_id tracks]]
+              (> (count tracks) n)))
+    (mapcat second)))
 
-  (def locations (google-locations google-location-records))
-  (def tracks (lastfm-tracks lastfm-recenttracks))
+(def track-filter-xform (track-play-count-filter-xform 10))
 
-  (locations-validator locations)
-  (locations-explainer locations)
-  (tracks-validator tracks)
+(defn train
+  [{:keys [lastfm-recenttracks-file google-locations-file]}]
+  (let [ ;; prepare data
+        lastfm-recenttracks     (get-lastfm-recenttracks lastfm-recenttracks-file)
+        google-location-records (get-google-location-records google-locations-file)
+        ;; parse data (TODO later optimization: use scicloj.ml.dataset for all this original pre-processing, it probably can do the join with location data very efficiently.)
+        locations               (google-locations google-location-records)
+        tracks                  (->> (lastfm-tracks lastfm-recenttracks)
+                                     #_(into [] track-filter-xform))
+        tracks-with-loc         (->> (nearest-location tracks locations)
+                                     ;; TODO Confusingly, filtering here is way less aggressive than filtering before nearest location. I'm confused why it's not exactly the same.
+                                     ;; Logically, I think it makes more sense to filtering before joining with the location data.
+                                     (into [] track-filter-xform))
+        _                       (assert (results-validator tracks-with-loc) "Tracks with assigned location is malformed.")
+        ds                      (ds/dataset tracks-with-loc)
+        pipeline-fn             (ml/pipeline (mm/select-columns [:loc/lat :loc/lng])
+                                             {:metamorph/id :kmeans-model}
+                                             (mm/cluster :k-means [504] :location)) ;; I think this means: 504 categories, column name is :location
+        trained-ctx             (pipeline-fn {:metamorph/data ds
+                                              :metamorph/mode :fit})
+        clustered-ds            (ds/add-column ds :location (ds/column (:metamorph/data trained-ctx) :location))
 
-  (def results (nearest-location tracks locations))
+        ;; Proper training and testing that I'll definitely need to do in the future
+        ;; (def split-ds
+        ;;   (first
+        ;;     (ds/split->seq ds
+        ;;                    :holdout
+        ;;                    {:ratio       [0.8 0.2]
+        ;;                     :split-names [:train-val :test]})))
+        ;; (def train-ds (:train-val split-ds))
+        ;; (def test-ds (:test split-ds))
+        ;; (def train-val-splits (ds/split->seq train-ds :kfold {:k 10}))
+        ;; (def evaluations
+        ;;   (ml/evaluate-pipelines
+        ;;     [pipeline-fn]
+        ;;     train-val-splits
+        ;;     ml/classification-accuracy
+        ;;     :accuracy))
+        ;; (def test-ctx
+        ;;   (pipe-fn
+        ;;     (assoc test-ctx
+        ;;            :metamorph/data train-ds
+        ;;            :metamorph/mode :fit)))
 
-  ;;
-  ;; Analyze
-  ;;
+        ]
+    ;; TODO I'll end up streaming this clustered-dataset to the http response
+    clustered-ds))
 
-  (count results)
-  ;; => 45644
-
-  ;; Surprisingly they're almost all perfect matches on timestamp
-  ;; TODO look into this, it's almost too good to be true... unless the step factor
-  ;; on the google data is once a second then it makes a lot of sense, especially since
-  ;; I'm pretty much always using my phone to play music.
-  (frequencies
-    (into []
-          (map (fn [track]
-                 (abs (- (.toEpochSecond (:timestamp track))
-                         (.toEpochSecond (:timestamp (:location track)))))))
-          results))
-
-  ;; How many different tracks are there? About 1000 with at least 10 plays.
-  (->> (into []
-             (map :id)
-             tracks)
-       frequencies
-       (into {}
-             (filter (fn [[_id c]]
-                       (>= c 10))))
-       count)
-
-  )
-
-(comment
-
-  (def locations (google-locations google-location-records))
-  (def tracks (lastfm-tracks lastfm-recenttracks))
-  (def results (nearest-location tracks locations))
-  (results-validator results)
-
-  ;; Notes
-  ;; - it would be cool if time was considered in the clustering
-  ;; - :track/timestamp is more relevant than :loc/timestamp
-  ;; - I wonder if a vector of time parts [YYYY MM DD mm ss nn] would be better
-
-  ;; TODO alternatively consider getting my 1000 most played songs, should be easy with ds
-  (def frequently-listened ;; TODO do this filtering during the ds/dataset call
-    (->> (into []
-               (map :id)
-               tracks)
-         frequencies
-         (into #{}
-               (keep (fn [[id c]]
-                       (when (>= c 10)
-                         id))))))
-
-  (def ds
-    (ds/dataset
-      (into []
-            (filter #(contains? frequently-listened (:track/id %)))
-            results)))
-  (ds/row-count ds)
-
-  (def pipeline-fn
-    (ml/pipeline
-      (mm/select-columns [:loc/lat :loc/lng])
-      {:metamorph/id :kmeans-model}
-      (mm/cluster :k-means [504] :location)))
-
-  (def trained-ctx
-    (pipeline-fn
-      {:metamorph/data ds
-       :metamorph/mode :fit}))
+(comment ;; Scratch
 
   (def clustered-ds
-    (ds/add-column ds :location (ds/column (:metamorph/data trained-ctx) :location)))
+    (train {:lastfm-recenttracks-file (io/file (io/resource "lastfm-recenttracks-20231130.json"))
+            :google-locations-file    (io/file (io/resource "google-location-records.json"))}))
 
-  ;; Proper training and testing that I'm definitely not doing
-  ;; (def split-ds
-  ;;   (first
-  ;;     (ds/split->seq ds
-  ;;                    :holdout
-  ;;                    {:ratio       [0.8 0.2]
-  ;;                     :split-names [:train-val :test]})))
-  ;; (def train-ds (:train-val split-ds))
-  ;; (def test-ds (:test split-ds))
-  ;; (def train-val-splits (ds/split->seq train-ds :kfold {:k 10}))
-  ;; (def evaluations
-  ;;   (ml/evaluate-pipelines
-  ;;     [pipeline-fn]
-  ;;     train-val-splits
-  ;;     ml/classification-accuracy
-  ;;     :accuracy))
-  ;; (def test-ctx
-  ;;   (pipe-fn
-  ;;     (assoc test-ctx
-  ;;            :metamorph/data train-ds
-  ;;            :metamorph/mode :fit)))
+  (clojure.java.io/make-writer % {})
 
-  (def map-pipeline
-    (ml/pipeline
-      (mm/select-columns [:loc/lng :loc/lat :location])))
-  (ds/write-csv! (:metamorph/data (map-pipeline clustered-ds)) "dev-resources/501.csv")
+  (ring.util.io/piped-input-stream
+    #(let [w (clojure.java.io/make-writer % {})]
+       (.flush (ds/write! clustered-ds w {:file-type :csv}))))
 
-  ;; View on https://www.arcgis.com/ this is amazing!
+  (let [o (clojure.java.io/make-output-stream)]
+    (ds/write! clustered-ds o {:file-type :csv}))
 
   )

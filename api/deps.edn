@@ -6,11 +6,16 @@
          org.clojure/data.csv         {:mvn/version "1.0.1"}
          cheshire/cheshire            {:mvn/version "5.12.0"}
          metosin/malli                {:mvn/version "0.13.0"}
-         scicloj/scicloj.ml           {:mvn/version "0.3"  ;; TODO this is a huge library and should only be included with extra-deps
-                                       :exclusions  [com.github.haifengl/smile-mkl]} ;; it was failing to get the specified version of org.bytedeco/mkl so I excluded it. May cause errors for specific apis.
+         scicloj/scicloj.ml           {:mvn/version "0.3"
+                                       :exclusions  [com.github.haifengl/smile-mkl]} ;; it was failing to get the specified version of org.bytedeco/mkl so I excluded it. May cause errors for specific apis. But that was in clj-scratch so maybe this new project won't have that dependency issue.
          clj-spotify/clj-spotify      {:mvn/version "0.1.9"} ;; 0.1.10 had issue with api
          org.clj-commons/byte-streams {:mvn/version "0.3.4"}
          net.cgrand/xforms            {:mvn/version "0.19.5"}
+         metosin/reitit               {:mvn/version "0.7.0-alpha5"},
+         ring/ring-jetty-adapter      {:mvn/version "1.7.1"}
+         ring-cors/ring-cors          {:mvn/version "0.1.13"},
+         metosin/sieppari             {:mvn/version "0.0.0-alpha13"}
+         zerg000000/simple-cors       {:mvn/version "0.0.8"}
          }
  :aliases
  {:run-m {:main-opts ["-m" "com.benwiz.geoplaylist"]}
