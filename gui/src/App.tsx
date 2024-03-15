@@ -13,7 +13,7 @@ const App: React.FC = () => {
         fetch("http://localhost:8008/test/csv")
             .then((r) => r.text())
             .then(console.log);
-        fetch("http://localhost:8008/pretrained")
+        fetch("http://localhost:8008/pretrained") // just an example, a functioning upload is more important than rendering any results right now.
             .then((r) => r.text())
             .then(console.log);
     }, [])
