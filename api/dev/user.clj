@@ -1,10 +1,12 @@
 (ns user
   (:require [aleph.http :as http]
             [byte-streams :as bs]
-            [manifold.deferred :as md]
             [cheshire.core :as cheshire]
             [clojure.java.io :as io]
-            [com.benwiz.geoplaylist :as geoplaylist]))
+            [clojure.string :as str]
+            [com.benwiz.geoplaylist :as geoplaylist]
+            [com.benwiz.geoplaylist.analyzer :as analyzer]
+            [manifold.deferred :as md]))
 
 (def base-url "http://localhost:8008")
 
@@ -74,5 +76,25 @@
   (get-csv-check)
 
   (post-train)
+
+  )
+
+(defn scrub-location-data
+  [filename]
+  (-> (io/resource filename)
+      analyzer/get-google-location-records
+      (update :locations
+              (fn [locations]
+                (into []
+                      (map (fn [loc]
+                             (assoc loc
+                                    :latitudeE7 (+ (rand-int (* 20 10000000)) (* 25 10000000))
+                                    :longitudeE7 (- (+ (rand-int (* 60 10000000)) (* 65 10000000))))))
+                      locations)))
+      (cheshire/generate-stream (io/writer "resources/google-location-records-scrubbed.json"))))
+
+(comment
+
+  (scrub-location-data "google-location-records.json")
 
   )
