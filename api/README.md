@@ -38,14 +38,15 @@ Use this to get a very small csv
 GET /test/csv
 ```
 
- Use this to get pre-trained data to bypass the upload and training stages.
- It won't be useful now, but it'll become useful later.
+Use this to get pre-trained data to bypass the upload and training stages.
+It won't be useful now, but it'll become useful later.
 
 ```
 GET /pretrained
 ```
 
-This is the actual endpoint you'll use to upload files to
+This is the actual endpoint you'll use to upload files.
+The form-part names must be `lastfm-recenttracks` and `google-locations`.
 
 ```
 POST /train
