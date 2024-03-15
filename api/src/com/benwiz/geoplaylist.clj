@@ -19,21 +19,24 @@
 
 (defn ok
   [_request]
-  {:status  200
-   :headers {"Content-Type" "application/json"}
-   :body    {:message "ok"}})
+  {:status 200
+   :body   {:message "ok"}})
 
 (defn bad
   [_request]
-  {:status  400
-   :headers {"Content-Type" "application/json"}
-   :body    {:message "not good"}})
+  {:status 400
+   :body   {:message "not good"}})
 
 (defn csv
   [_request]
-  {:status  200
+  {:status 200
    :headers {"Content-Type" "text/csv"}
-   :body    (slurp (io/resource "clustered-ds.csv"))})
+   :body   "a,b,c\n1,2,3\n4,5,6"})
+
+(defn pretrained
+  [_request]
+  {:status 200
+   :body   (slurp (io/resource "clustered-ds.csv"))})
 
 (defn train
   [{{:strs [lastfm-recenttracks google-locations] :as params} :params}]
@@ -53,6 +56,7 @@
     ["/health" {:get ok}]
     ["/error" {:get bad}]
     ["/csv" {:get csv}]]
+   ["/pretrained" {:get pretrained}]
    ["/train" {:parameters {:multipart
                            {:file {:filename     string?
                                    :content-type string?
@@ -62,10 +66,10 @@
 
 (def cors-config
   {:cors-config
-   {:allowed-request-methods [:post :get :put :patch :delete]
-    :allowed-request-headers ["Authorization" "Content-Type"]
+   {:allowed-request-methods [:get :post]
+    :allowed-request-headers ["Content-Type" "Accept"]
     :allow-credentials?      true
-    :origins                 ["*"]
+    :origins                 "*"
     :max-age                 300}})
 
 (defn router
@@ -73,8 +77,10 @@
   (http/router
     (routes)
     {:exception pretty/exception
-     :data      {:interceptors [
-                                ;; (cors/cors-interceptor cors-config)
+     :data      {:interceptors [#_{:leave (fn [ctx]
+                                            (clojure.pprint/pprint (:response ctx))
+                                            ctx)}
+                                (cors/cors-interceptor cors-config)
                                 (parameters/parameters-interceptor)
                                 ;; {:enter #(update-in % [:request :query-params] walk/keywordize-keys)} ;; parameters-interceptor does not keywordize keys, probably has a good reason for not doing so if spaces are allowed in query-param keys
                                 (muuntaja/format-negotiate-interceptor)
@@ -87,7 +93,7 @@
                                 (multipart/multipart-interceptor)
                                 ;; ring.middleware.multipart-params/wrap-multipart-params
                                 ]
-                 :muuntaja m/instance
+                 :muuntaja     m/instance
                  #_#_:coercion (reitit.coercion.malli/create
                                  {:transformers     {:body     {:default reitit.coercion.malli/default-transformer-provider
                                                                 :formats {"application/json" reitit.coercion.malli/json-transformer-provider}}
