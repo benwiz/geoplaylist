@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Loading from './components/Loading/Loading';
+import Loading from './components/loading/Loading';
 import fetchAsciiArt from './utility/asciiFetch';
 
 const App: React.FC = () => {
