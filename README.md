@@ -9,11 +9,11 @@ If you Scrobble your music into last.fm you can download your play history here 
 # Spotify APP Credentials (needed for Spotify Web API)
 
 Client id `641da771c201429da8ec99a659aa5ff6`
-Client secret `3eac5083da4d4be0804ebdb0cf116c01` (don't make it public)
+Client secret `3eac5083da4d4be0804ebdb0cf116c01` (KEEP THIS SECRET, I'll scrub it from git before we release publicly)
 
 # API
 
-POST /upload (or similarly named)
+POST /train
   Expects location and music history in zip or csv format depending the source
   Returns a geographic location for each song. (location1, location2, location3, that represent real life areas like "Tulane" or "Junior year house")
 
