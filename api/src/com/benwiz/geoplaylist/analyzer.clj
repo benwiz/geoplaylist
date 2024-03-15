@@ -269,13 +269,7 @@
     (train {:lastfm-recenttracks-file (io/file (io/resource "lastfm-recenttracks-20231130.json"))
             :google-locations-file    (io/file (io/resource "google-location-records.json"))}))
 
-  (clojure.java.io/make-writer % {})
+  (ds/write! clustered-ds "resources/clustered-ds.csv")
 
-  (ring.util.io/piped-input-stream
-    #(let [w (clojure.java.io/make-writer % {})]
-       (.flush (ds/write! clustered-ds w {:file-type :csv}))))
-
-  (let [o (clojure.java.io/make-output-stream)]
-    (ds/write! clustered-ds o {:file-type :csv}))
 
   )

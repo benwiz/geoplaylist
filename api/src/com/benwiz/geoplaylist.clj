@@ -17,11 +17,23 @@
             [simple-cors.reitit.interceptor :as cors])
   (:import (java.io File)))
 
-(defn ok [_request] {:status 200 :body {:message "ok"}})
+(defn ok
+  [_request]
+  {:status  200
+   :headers {"Content-Type" "application/json"}
+   :body    {:message "ok"}})
 
-(defn bad [_request] {:status 400 :body {:message "not good"}})
+(defn bad
+  [_request]
+  {:status  400
+   :headers {"Content-Type" "application/json"}
+   :body    {:message "not good"}})
 
-(defn csv [_request] {:status 200 :body "a,b,c\n1,2,3\n,4,5,6"})
+(defn csv
+  [_request]
+  {:status  200
+   :headers {"Content-Type" "text/csv"}
+   :body    (slurp (io/resource "clustered-ds.csv"))})
 
 (defn train
   [{{:strs [lastfm-recenttracks google-locations] :as params} :params}]
