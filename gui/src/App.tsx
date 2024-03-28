@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Loading from './components/Loading/Loading';
+import Nav from './components/Nav/Nav';
 import fetchAsciiArt from './utility/asciiFetch';
 
 const App: React.FC = () => {
@@ -33,10 +34,13 @@ const App: React.FC = () => {
       {isLoading ? (
         <Loading />
       ) : (
-        <div>
-          Welcome, to jurassic park
-          {asciiArt && <pre>{asciiArt}</pre>}
-        </div>
+        <>
+          <Nav />
+          <div>
+            Welcome, to jurassic park
+            {asciiArt && <pre>{asciiArt}</pre>}
+          </div>
+        </>
       )}
     </>
   );
