@@ -142,5 +142,7 @@
 
 (defn -main
   [& {:as args}]
-  (prn "Starting geoplaylist-server..." args)
-  (restart server (merge {:port 8008 :join? true} args)))
+  (let [port 8008]
+    (prn (str "Starting geoplaylist-server on port " port
+              (when args (str " with args:" args))))
+    (restart server (merge {:port port :join? true} args))))
