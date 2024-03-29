@@ -38,6 +38,15 @@
   {:status 200
    :body   (slurp (io/resource "clustered-ds.csv"))})
 
+(defn stringify-keywords
+  [keywords]
+  (into {}
+        (map (fn [n]
+               [n (if (namespace n)
+                    (str (namespace n) "/" (name n))
+                    (name n))]))
+        keywords))
+
 (defn train
   [{{:strs [lastfm-recenttracks google-locations] :as params} :params}]
   (println "Start training...")
@@ -48,7 +57,10 @@
      :headers {"Content-Type" "text/csv"}
      :body    (ring-io/piped-input-stream
                 #(let [w (io/make-writer % {})]
-                   (.flush (ds/write! results w {:file-type :csv}))))}))
+                   (-> results
+                       (ds/rename-columns (stringify-keywords (ds/column-names results)))
+                       (ds/write! w {:file-type :csv})
+                       .flush)))}))
 
 (defn routes
   []
