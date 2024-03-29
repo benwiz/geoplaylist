@@ -26,19 +26,6 @@ const App: React.FC = () => {
     }, 2000);
 
     // Grab ascii art from .txt
-    // const fetchAsciiAndUpdateState = async () => {
-    //   try {
-    //     const asciiTxt = await fetchAsciiArt();
-    //     setAsciiArt(asciiTxt);
-    //   } catch (error) {
-    //     console.log('bad ascii request');
-    //     setAsciiArt('no dinos here...');
-    //   }
-    // };
-    // fetchAsciiAndUpdateState();
-
-    // Alternative style of the ascii art fetch
-    // Not necessarily better, just more traditional and more functional.
     fetchAsciiArt()
       .then(setAsciiArt)
       .catch((e) => {
