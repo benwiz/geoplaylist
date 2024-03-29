@@ -1,4 +1,4 @@
-id,timestamp,artist,album,name,lat,lng,timestamp,location
+track/id,track/timestamp,track/artist,track/album,track/name,loc/lat,loc/lng,loc/timestamp,location
 lastfm/2c883e4f-4a5e-3bf5-b25b-20e72265d9df,2023-09-06T15:58:01Z,Trevor Hall,This Is Blue,Om Shakti Om,30.2751568,-97.7028018,2023-09-06T15:53:49.992Z,0
 lastfm/2c883e4f-4a5e-3bf5-b25b-20e72265d9df,2023-03-14T16:21:05Z,Trevor Hall,This Is Blue,Om Shakti Om,30.2751796,-97.7027851,2023-03-14T16:01:58.998Z,0
 lastfm/2c883e4f-4a5e-3bf5-b25b-20e72265d9df,2023-02-09T16:13:36Z,Trevor Hall,This Is Blue,Om Shakti Om,30.2751645,-97.7045212,2023-02-09T16:30:05.647Z,0
