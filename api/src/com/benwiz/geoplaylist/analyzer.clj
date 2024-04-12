@@ -2,14 +2,15 @@
   (:require [cheshire.core :as cheshire]
             [clojure.instant :as inst]
             [clojure.java.io :as io]
+            [clojure.string :as str]
             [malli.core :as m]
             [malli.experimental.time :as met]
             [malli.registry :as mr]
+            [net.cgrand.xforms :as xf]
             [scicloj.ml.core :as ml]
             [scicloj.ml.dataset :as ds]
-            [scicloj.ml.metamorph :as mm]
-            [net.cgrand.xforms :as xf])
-  (:import (java.time OffsetDateTime ZoneOffset LocalDateTime)
+            [scicloj.ml.metamorph :as mm])
+  (:import (java.time OffsetDateTime ZoneOffset LocalDateTime ZoneId)
            (java.time.format DateTimeFormatter)
            (java.util Date UUID)))
 
@@ -22,7 +23,7 @@
 ;; - :track/timestamp is more relevant than :loc/timestamp
 ;; - I wonder if a vector of time parts [YYYY MM DD mm ss nn] would be better
 
-(mr/set-default-registry! ;; TODO probably don't run this here
+(mr/set-default-registry! ;; should this be run here or elsewhere?
   (mr/composite-registry
     (m/default-schemas)
     (met/schemas)))
@@ -60,7 +61,7 @@
    [:timestamp :time/offset-date-time]
    ;; the following are all for rendering only, analysis should only use the above for now
    [:artist string?]
-   [:album string?]
+   [:album {:optional true} string?]
    [:name string?]])
 
 (def tracks-schema ;; TODO add in sort checking
@@ -131,19 +132,73 @@
                   :name      name})))
         pages))
 
-(comment ;; TODO Explore spotify data
+(defn get-spotify-streaming-history-short
+  [files]
+  (into []
+        (mapcat #(cheshire/parse-stream (io/reader %) keyword))
+        files))
+
+(defn spotify-tracks-short
+  [streams]
+  (into []
+        (map (fn [{:keys [endTime artistName trackName msPlayed]}]
+               {:id        (-> (str "spotify/" artistName "/" trackName) ;; would need to make spotify api request to get the real id, annoying
+                               (str/replace \space \_))
+                :timestamp (.. (LocalDateTime/parse endTime ;; I asusme this is UTC
+                                                    (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm"))
+                               (atZone (ZoneId/of "UTC"))
+                               toOffsetDateTime)
+                :artist    artistName
+                ;; :album     "" ;; would need to make spotify api request to know this
+                :name      trackName}))
+        streams))
+
+ (comment
 
   (def spotify-streams
-    (cheshire/parse-stream
-      (io/reader (io/resource "StreamingHistory0.json")) ;; this is just the past year's history
-      (fn [k]
-        (case k
-          "@attr" :attr
-          "#text" :text
-          (keyword k))))
+    (get-spotify-streaming-history-short
+      [(io/resource "StreamingHistory0.json")
+       (io/resource "StreamingHistory1.json")])
     )
 
+  (spotify-tracks-short spotify-streams)
+
   )
+
+(comment ;; TODO Explore spotify extended data
+
+  {:ts                "2022-12-01 00:05" ;; endTime
+   :ms_played         726600
+   :spotify_track_uri "spotify:track:3lqkdtSptgT5JbREVV4U7H"
+
+   :username                          ""
+   :platform                          ""
+   :conn_country                      ""
+   :ip_addr_decrypted                 ""
+   :user_agent_decrypted              ""
+   :master_metadata_track_name        ""
+   :master_metadata_album_artist_name ""
+   :master_metadata_album_album_name  ""
+   :episode_name                      ""
+   :episode_show_name                 ""
+   :spotify_episode_uri               ""
+   :reason_start                      ""
+   :reason_end                        ""
+   :shuffle                           ""
+   :skipped                           ""
+   :offline                           ""
+   :offline_timestamp                 ""
+   :incognito_mode                    ""}
+
+  ;; the short term data
+  {:endTime    "2022-12-01 00:05"
+   :artistName "Chinmaya Dunster"
+   :trackName  "On Sacred Ground"
+   :msPlayed   726600}
+
+  )
+
+
 
 (defn nearest-location ;; TODO This is dropping wayyy more tracks than expected, I need to review this whole algorithm
   [initial-tracks initial-locations]
@@ -216,14 +271,23 @@
 (def track-filter-xform (track-play-count-filter-xform 10))
 
 (defn train
-  [{:keys [lastfm-recenttracks-file google-locations-file]}]
-  (let [ ;; prepare data
-        lastfm-recenttracks     (get-lastfm-recenttracks lastfm-recenttracks-file)
+  [{:keys [spotify-streaming-history-short-files lastfm-recenttracks-file google-locations-file]}]
+  (assert (or (and (some? spotify-streaming-history-short-files)
+                   (nil? lastfm-recenttracks-file))
+              (and (nil? spotify-streaming-history-short-files)
+                   (some? lastfm-recenttracks-file)))
+          "Either spotify-streaming-history-short-files or is allowed lastfm-recenttracks-file")
+  (let [ ;; ingest data
         google-location-records (get-google-location-records google-locations-file)
+        tracks                  (cond
+                                  spotify-streaming-history-short-files
+                                  (spotify-tracks-short (get-spotify-streaming-history-short spotify-streaming-history-short-files))
+                                  lastfm-recenttracks-file
+                                  (lastfm-tracks (get-lastfm-recenttracks lastfm-recenttracks-file)))
+        _                       (assert tracks) ;; TODO use malli to validate instead
         ;; parse data (TODO later optimization: use scicloj.ml.dataset for all this original pre-processing, it probably can do the join with location data very efficiently.)
         locations               (google-locations google-location-records)
-        tracks                  (->> (lastfm-tracks lastfm-recenttracks)
-                                     #_(into [] track-filter-xform))
+        ;; tracks                  (into [] track-filter-xform tracks)
         tracks-with-loc         (->> (nearest-location tracks locations)
                                      ;; TODO Confusingly, filtering here is way less aggressive than filtering before nearest location. I'm confused why it's not exactly the same.
                                      ;; Logically, I think it makes more sense to filtering before joining with the location data.
@@ -258,16 +322,19 @@
         ;;     (assoc test-ctx
         ;;            :metamorph/data train-ds
         ;;            :metamorph/mode :fit)))
-
         ]
-    ;; TODO I'll end up streaming this clustered-dataset to the http response
     clustered-ds))
 
 (comment ;; Scratch
 
+  (take 1 (spotify-tracks-short (get-spotify-streaming-history-short [(io/resource "StreamingHistory0.json") (io/resource "StreamingHistory1.json")])))
+  (take 1 (lastfm-tracks (get-lastfm-recenttracks (io/file (io/resource "lastfm-recenttracks-20231130.json")))))
+  (take 1 (get-google-location-records (io/file (io/resource "google-location-records.json"))))
+
   (def clustered-ds
-    (train {:lastfm-recenttracks-file (io/file (io/resource "lastfm-recenttracks-20231130.json"))
-            :google-locations-file    (io/file (io/resource "google-location-records.json"))}))
+    (train {#_#_:spotify-streaming-history-short-files [(io/file (io/resource "StreamingHistory0.json")) (io/file (io/resource "StreamingHistory1.json"))]
+            :lastfm-recenttracks-file              (io/file (io/resource "lastfm-recenttracks-20231130.json"))
+            :google-locations-file                 (io/file (io/resource "google-location-records.json"))}))
 
   (ds/write! clustered-ds "resources/clustered-ds.csv")
 

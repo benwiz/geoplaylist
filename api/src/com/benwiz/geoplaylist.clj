@@ -48,7 +48,7 @@
         keywords))
 
 (defn train
-  [{{:strs [lastfm-recenttracks google-locations] :as params} :params}]
+  [{{:strs [spotify-streaming-history-short lastfm-recenttracks google-locations] :as params} :params}]
   (println "Start training...")
   (let [results (analyzer/train {:lastfm-recenttracks-file (:tempfile lastfm-recenttracks)
                                  :google-locations-file    (:tempfile google-locations)})]
