@@ -13,9 +13,7 @@ Client secret `3eac5083da4d4be0804ebdb0cf116c01` (KEEP THIS SECRET, I'll scrub i
 
 # API
 
-POST /train
-  Expects location and music history in zip or csv format depending the source
-  Returns a geographic location for each song. (location1, location2, location3, that represent real life areas like "Tulane" or "Junior year house")
+See `api/README.md`
 
 # GUI
 
@@ -29,3 +27,10 @@ POST /train
 - Take the request's response and use it to create playlists in spotify
 - Later
   - Integrate with a map to allow the user's to define location and other things
+
+# TODO
+
+- API
+  - injest spotify data
+  - finish training properly
+- GUI
