@@ -20,8 +20,10 @@
 ;; - it would be interesting to do a blog post on the difference between spotify and last.fm
 ;; - make it pluggable, just allow using either of them, they should both be easy imports
 ;; - it would be cool if time was considered in the clustering
-;; - :track/timestamp is more relevant than :loc/timestamp
+;; - :track/timestamp is more relevant than :loc/timestamp... or maybe not. Which do I care about more? Confidence of the song time or confidence of location time?
 ;; - I wonder if a vector of time parts [YYYY MM DD mm ss nn] would be better
+
+;; TODO probably should use instrumented fns instead of validator and explainer
 
 (mr/set-default-registry! ;; should this be run here or elsewhere?
   (mr/composite-registry
@@ -49,15 +51,14 @@
             (first locations)
             (rest locations))))]])
 
-(def location-validator (m/validator location-schema))
-(def location-explainer (m/explainer location-schema))
+;; (def location-validator (m/validator location-schema))
+;; (def location-explainer (m/explainer location-schema))
 (def locations-validator (m/validator locations-schema))
 (def locations-explainer (m/explainer locations-schema))
 
 (def track-schema
   [:map
    [:id :any]
-   ;; TODO I actually want to keep the timezone
    [:timestamp :time/offset-date-time]
    ;; the following are all for rendering only, analysis should only use the above for now
    [:artist string?]
@@ -67,21 +68,21 @@
 (def tracks-schema ;; TODO add in sort checking
   [:vector track-schema])
 
-(def track-validator (m/validator track-schema))
-(def track-explainer (m/explainer track-schema))
+;; (def track-validator (m/validator track-schema))
+;; (def track-explainer (m/explainer track-schema))
 (def tracks-validator (m/validator tracks-schema))
 (def tracks-explainer (m/explainer tracks-schema))
 
 (def results-schema
   [:vector
    [:map
-    [:track/id        string?]
+    [:track/id string?]
     [:track/timestamp :time/offset-date-time]
-    [:track/artist    string?]
-    [:track/album     string?]
-    [:track/name      string?]
-    [:loc/lat         number?]
-    [:loc/lng         number?]
+    [:track/artist string?]
+    [:track/album {:optional true} string?]
+    [:track/name string?]
+    [:loc/lat number?]
+    [:loc/lng number?]
     [:loc/timestamp :time/offset-date-time]]])
 
 (def results-validator (m/validator results-schema))
@@ -151,7 +152,7 @@
                 :artist    artistName
                 ;; :album     "" ;; would need to make spotify api request to know this
                 :name      trackName}))
-        streams))
+        (reverse streams)))
 
  (comment
 
@@ -198,9 +199,8 @@
 
   )
 
-
-
-(defn nearest-location ;; TODO This is dropping wayyy more tracks than expected, I need to review this whole algorithm
+(defn nearest-location ;; TODO I could probably do this more efficiently from tech.ml.dataset instead of a recursive Clojure fn.
+   ;; TODO This is dropping wayyy more tracks than expected, I need to review this whole algorithm
   [initial-tracks initial-locations]
   (loop [track     (first initial-tracks)
          tracks    (rest initial-tracks)
@@ -270,36 +270,57 @@
 
 (def track-filter-xform (track-play-count-filter-xform 10))
 
-(defn train
+(defn parse-inputs ;; TODO it'd be better to validate the real inputs instead of the parsed inputs
   [{:keys [spotify-streaming-history-short-files lastfm-recenttracks-file google-locations-file]}]
+  (let [locations        (google-locations (get-google-location-records google-locations-file))
+        tracks           (cond
+                           spotify-streaming-history-short-files
+                           (spotify-tracks-short (get-spotify-streaming-history-short spotify-streaming-history-short-files))
+                           lastfm-recenttracks-file
+                           (lastfm-tracks (get-lastfm-recenttracks lastfm-recenttracks-file)))
+        locations-valid? (locations-validator locations)
+        tracks-valid?    (tracks-validator tracks)]
+    (if-some [error
+              (not-empty (cond-> {}
+                           (not locations-valid?)
+                           (assoc :locations-error (into []
+                                                         (map #(update-in % [:value :locations] first))
+                                                         (:errors (locations-explainer locations))))
+                           (not tracks-valid?)
+                           (assoc :tracks-errors (into []
+                                                       (map #(update-in % [:value :tracks] first))
+                                                       (:errors (tracks-explainer tracks))))))]
+      (throw (ex-info "Parsed inputs are invalid." error))
+      (do
+        (println "Parsed inputs are valid.")
+        [locations tracks]))))
+
+(defn train
+  [{:keys [spotify-streaming-history-short-files lastfm-recenttracks-file google-locations-file n]
+    :or   {n 10}
+    :as   args}]
   (assert (or (and (some? spotify-streaming-history-short-files)
                    (nil? lastfm-recenttracks-file))
               (and (nil? spotify-streaming-history-short-files)
                    (some? lastfm-recenttracks-file)))
           "Either spotify-streaming-history-short-files or is allowed lastfm-recenttracks-file")
-  (let [ ;; ingest data
-        google-location-records (get-google-location-records google-locations-file)
-        tracks                  (cond
-                                  spotify-streaming-history-short-files
-                                  (spotify-tracks-short (get-spotify-streaming-history-short spotify-streaming-history-short-files))
-                                  lastfm-recenttracks-file
-                                  (lastfm-tracks (get-lastfm-recenttracks lastfm-recenttracks-file)))
-        _                       (assert tracks) ;; TODO use malli to validate instead
-        ;; parse data (TODO later optimization: use scicloj.ml.dataset for all this original pre-processing, it probably can do the join with location data very efficiently.)
-        locations               (google-locations google-location-records)
-        ;; tracks                  (into [] track-filter-xform tracks)
-        tracks-with-loc         (->> (nearest-location tracks locations)
-                                     ;; TODO Confusingly, filtering here is way less aggressive than filtering before nearest location. I'm confused why it's not exactly the same.
-                                     ;; Logically, I think it makes more sense to filtering before joining with the location data.
-                                     (into [] track-filter-xform))
-        _                       (assert (results-validator tracks-with-loc) "Tracks with assigned location is malformed.")
-        ds                      (ds/dataset tracks-with-loc)
-        pipeline-fn             (ml/pipeline (mm/select-columns [:loc/lat :loc/lng])
-                                             {:metamorph/id :kmeans-model}
-                                             (mm/cluster :k-means [504] :location)) ;; I think this means: 504 categories, column name is :location
-        trained-ctx             (pipeline-fn {:metamorph/data ds
-                                              :metamorph/mode :fit})
-        clustered-ds            (ds/add-column ds :location (ds/column (:metamorph/data trained-ctx) :location))
+  (let [[locations tracks] (parse-inputs args)
+        tracks-with-loc    (let [locs (nearest-location tracks locations)]
+                             (if (results-validator locs)
+                               locs
+                               (throw (ex-info "Tracks with assigned location is malformed."
+                                               {:errors (:errors (results-explainer locs))}))))
+        tracks-with-loc    (->> tracks-with-loc
+                                ;; TODO Confusingly, filtering here is way less aggressive than filtering before nearest location. I'm confused why it's not exactly the same.
+                                ;; Logically, I think it makes more sense to filtering before joining with the location data.
+                                (into [] track-filter-xform))
+        ds                 (ds/dataset tracks-with-loc {:parser-fn {:loc/timestamp #(.toString %)
+                                                                    :track/timestamp #(.toString %)}})
+        pipeline-fn        (ml/pipeline (mm/select-columns [:loc/lat :loc/lng])
+                                        {:metamorph/id :kmeans-model}
+                                        (mm/cluster :k-means [n] :place)) ;; `n` clusters, column name is :place
+        trained-ctx        (pipeline-fn {:metamorph/data ds :metamorph/mode :fit})
+        clustered-ds       (ds/add-column ds :place (ds/column (:metamorph/data trained-ctx) :place))
 
         ;; Proper training and testing that I'll definitely need to do in the future
         ;; (def split-ds
@@ -331,10 +352,16 @@
   (take 1 (lastfm-tracks (get-lastfm-recenttracks (io/file (io/resource "lastfm-recenttracks-20231130.json")))))
   (take 1 (get-google-location-records (io/file (io/resource "google-location-records.json"))))
 
-  (def clustered-ds
-    (train {#_#_:spotify-streaming-history-short-files [(io/file (io/resource "StreamingHistory0.json")) (io/file (io/resource "StreamingHistory1.json"))]
-            :lastfm-recenttracks-file              (io/file (io/resource "lastfm-recenttracks-20231130.json"))
-            :google-locations-file                 (io/file (io/resource "google-location-records.json"))}))
+  (try
+    (def clustered-ds
+      (train {
+              #_#_:spotify-streaming-history-short-files [(io/file (io/resource "StreamingHistory0.json")) (io/file (io/resource "StreamingHistory1.json"))
+                                                      (io/file (io/resource "StreamingHistory2.json")) (io/file (io/resource "StreamingHistory3.json"))
+                                                      (io/file (io/resource "StreamingHistory4.json"))]
+              :lastfm-recenttracks-file                  (io/file (io/resource "lastfm-recenttracks-20231130.json"))
+              :google-locations-file                 (io/file (io/resource "google-location-records.json"))}))
+    (catch Exception e
+      (or (ex-data e) (throw e))))
 
   (ds/write! clustered-ds "resources/clustered-ds.csv")
 

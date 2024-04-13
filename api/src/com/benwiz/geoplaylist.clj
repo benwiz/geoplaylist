@@ -40,6 +40,7 @@
   (http/router
     (routes)
     {:exception pretty/exception
+     ;; TODO clean up all this commented code.
      :data      {:interceptors [#_{:leave (fn [ctx]
                                             (clojure.pprint/pprint (:response ctx))
                                             ctx)}
