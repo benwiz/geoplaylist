@@ -30,10 +30,12 @@
         keywords))
 
 (defn train
-  [{{:strs [spotify-streaming-history-short lastfm-recenttracks google-locations] :as params} :params}]
+  [{{:strs [spotify-streaming-history-short spotify-streaming-history-extended lastfm-recenttracks google-locations]} :params}]
   (println "Start training...")
-  (let [results (analyzer/train {:lastfm-recenttracks-file (:tempfile lastfm-recenttracks)
-                                 :google-locations-file    (:tempfile google-locations)})]
+  (let [results (analyzer/train {:spotify-streaming-history-short    (:tempfile spotify-streaming-history-short) ;; TODO this needs to handle multiple files
+                                 :spotify-streaming-history-extended (:tempfile spotify-streaming-history-extended)
+                                 :lastfm-recenttracks-file           (:tempfile lastfm-recenttracks)
+                                 :google-locations-file              (:tempfile google-locations)})]
     (println "Finish training.")
     {:status  200
      :headers {"Content-Type" "text/csv"}

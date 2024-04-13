@@ -31,6 +31,6 @@ See `api/README.md`
 # TODO
 
 - API
-  - injest spotify data
+  - ingest extended spotify history
   - finish training properly
 - GUI

@@ -78,9 +78,9 @@
    [:map
     [:track/id string?]
     [:track/timestamp :time/offset-date-time]
-    [:track/artist string?]
+    [:track/artist {:optional true} string?]
     [:track/album {:optional true} string?]
-    [:track/name string?]
+    [:track/name {:optional true} string?]
     [:loc/lat number?]
     [:loc/lng number?]
     [:loc/timestamp :time/offset-date-time]]])
@@ -154,17 +154,29 @@
                 :name      trackName}))
         (reverse streams)))
 
- (comment
+;; TODO The following 2 functions are just a starting point. I don't yet have the data.
 
-  (def spotify-streams
-    (get-spotify-streaming-history-short
-      [(io/resource "StreamingHistory0.json")
-       (io/resource "StreamingHistory1.json")])
-    )
-
-  (spotify-tracks-short spotify-streams)
-
-  )
+(defn get-spotify-streaming-history-extended
+  [files]
+  (into []
+        (mapcat #(cheshire/parse-stream (io/reader %) keyword))
+        files))
+(defn spotify-tracks-extended
+  [streams]
+  (into []
+        (map (fn [{:keys [ts spotify_track_uri]}]
+               {:id        (-> (str "spotify/" (last (str/split spotify_track_uri ":" 3)))
+                               (str/replace \space \_))
+                :timestamp (.. (LocalDateTime/parse ts ;; I asusme this is UTC
+                                                    (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm"))
+                               (atZone (ZoneId/of "UTC"))
+                               toOffsetDateTime)
+                ;; would need to make spotify api request to know artist, album, name
+                ;; :artist    ""
+                ;; :album     ""
+                ;; :name      ""
+                }))
+        (reverse streams)))
 
 (comment ;; TODO Explore spotify extended data
 
@@ -190,12 +202,6 @@
    :offline                           ""
    :offline_timestamp                 ""
    :incognito_mode                    ""}
-
-  ;; the short term data
-  {:endTime    "2022-12-01 00:05"
-   :artistName "Chinmaya Dunster"
-   :trackName  "On Sacred Ground"
-   :msPlayed   726600}
 
   )
 
@@ -271,7 +277,7 @@
 (def track-filter-xform (track-play-count-filter-xform 10))
 
 (defn parse-inputs ;; TODO it'd be better to validate the real inputs instead of the parsed inputs
-  [{:keys [spotify-streaming-history-short-files lastfm-recenttracks-file google-locations-file]}]
+  [{:keys [spotify-streaming-history-short-files spotify-streaming-history-extended-files lastfm-recenttracks-file google-locations-file]}]
   (let [locations        (google-locations (get-google-location-records google-locations-file))
         tracks           (cond
                            spotify-streaming-history-short-files
