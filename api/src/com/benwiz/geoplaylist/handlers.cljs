@@ -15,12 +15,6 @@
   {:status 400
    :body   {:message "not good"}})
 
-(defn csv
-  [_request]
-  {:status 200
-   :headers {"Content-Type" "text/csv"}
-   :body   "a,b,c\n1,2,3\n4,5,6"})
-
 (defn pretrained
   [_request]
   {:status 200

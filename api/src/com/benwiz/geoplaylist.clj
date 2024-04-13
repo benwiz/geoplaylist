@@ -18,8 +18,7 @@
   []
   [["/test" {}
     ["/health" {:get handlers/ok}]
-    ["/error" {:get handlers/bad}]
-    ["/csv" {:get handlers/csv}]]
+    ["/error" {:get handlers/bad}]]
    ["/pretrained" {:get handlers/pretrained}]
    ["/train" {:parameters {:multipart
                            {:file {:filename     string?

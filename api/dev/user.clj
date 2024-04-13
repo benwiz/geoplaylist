@@ -8,6 +8,8 @@
             [com.benwiz.geoplaylist.analyzer :as analyzer]
             [manifold.deferred :as md]))
 
+;; Server management tools
+
 (def base-url "http://localhost:8008")
 
 (defn restart
@@ -50,8 +52,6 @@
       (md/catch catch-error)
       deref))
 
-#_(slurp (io/resource "lastfm-recenttracks-20231130.json"))
-
 (defn post-train
   []
   (-> (http/request
@@ -67,7 +67,7 @@
                   (bs/to-string body)))
       deref))
 
-(comment
+(comment ;; Start server
 
   (restart)
 
@@ -78,6 +78,8 @@
   (post-train)
 
   )
+
+;; Scratch
 
 (defn scrub-location-data
   [filename]
@@ -94,6 +96,8 @@
       (cheshire/generate-stream (io/writer "resources/google-location-records-scrubbed.json"))))
 
 (comment
+
+  (slurp (io/resource "lastfm-recenttracks-20231130.json"))
 
   (scrub-location-data "google-location-records.json")
 
