@@ -46,7 +46,7 @@ GET /pretrained
 ```
 
 This is the actual endpoint you'll use to upload files.
-The form-part names must be (`lastfm-recenttracks` or `spotify-streaming-history-short`) and `google-locations`.
+The form-part names must be one of `#{"lastfm-recenttracks" "spotify-streaming-history-short" "spotify-streaming-history-extended"}` and `google-locations`.
 
 ```
 POST /train

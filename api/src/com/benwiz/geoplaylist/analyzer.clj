@@ -298,7 +298,7 @@
                                                        (:errors (tracks-explainer tracks))))))]
       (throw (ex-info "Parsed inputs are invalid." error))
       (do
-        (println "Parsed inputs are valid.")
+        (println "Parsed inputs are valid...")
         [locations tracks]))))
 
 (defn train
