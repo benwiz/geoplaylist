@@ -1,5 +1,5 @@
 (ns com.benwiz.geoplaylist
-  (:require [com.benwiz.geoplaylist.analyzer :as analyzer]
+  (:require [com.benwiz.geoplaylist.handlers :as handlers]
             [muuntaja.core :as m]
             [reitit.coercion.malli]
             [reitit.dev.pretty :as pretty]
@@ -10,71 +10,23 @@
             [reitit.interceptor.sieppari :as s]
             [reitit.ring :as ring]
             [ring.adapter.jetty :as jetty]
-            [clojure.java.io :as io]
-            [ring.util.io :as ring-io]
-            [scicloj.ml.dataset :as ds]
             [sieppari.async.manifold] ;; needed for manifold
             [simple-cors.reitit.interceptor :as cors])
   (:import (java.io File)))
 
-(defn ok
-  [_request]
-  {:status 200
-   :body   {:message "ok"}})
-
-(defn bad
-  [_request]
-  {:status 400
-   :body   {:message "not good"}})
-
-(defn csv
-  [_request]
-  {:status 200
-   :headers {"Content-Type" "text/csv"}
-   :body   "a,b,c\n1,2,3\n4,5,6"})
-
-(defn pretrained
-  [_request]
-  {:status 200
-   :body   (slurp (io/resource "clustered-ds.csv"))})
-
-(defn stringify-keywords
-  [keywords]
-  (into {}
-        (map (fn [n]
-               [n (if (namespace n)
-                    (str (namespace n) "/" (name n))
-                    (name n))]))
-        keywords))
-
-(defn train
-  [{{:strs [spotify-streaming-history-short lastfm-recenttracks google-locations] :as params} :params}]
-  (println "Start training...")
-  (let [results (analyzer/train {:lastfm-recenttracks-file (:tempfile lastfm-recenttracks)
-                                 :google-locations-file    (:tempfile google-locations)})]
-    (println "Finish training.")
-    {:status  200
-     :headers {"Content-Type" "text/csv"}
-     :body    (ring-io/piped-input-stream
-                #(let [w (io/make-writer % {})]
-                   (-> results
-                       (ds/rename-columns (stringify-keywords (ds/column-names results)))
-                       (ds/write! w {:file-type :csv})
-                       .flush)))}))
-
 (defn routes
   []
   [["/test" {}
-    ["/health" {:get ok}]
-    ["/error" {:get bad}]
-    ["/csv" {:get csv}]]
-   ["/pretrained" {:get pretrained}]
+    ["/health" {:get handlers/ok}]
+    ["/error" {:get handlers/bad}]
+    ["/csv" {:get handlers/csv}]]
+   ["/pretrained" {:get handlers/pretrained}]
    ["/train" {:parameters {:multipart
                            {:file {:filename     string?
                                    :content-type string?
                                    :size         int?
                                    :tempfile     [:fn #(instance? File %)]}}}
-              :post       train}]])
+              :post       handlers/train}]])
 
 (def cors-config
   {:cors-config
