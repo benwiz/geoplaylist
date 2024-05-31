@@ -9,6 +9,11 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
+  "plugins": [
+    {
+      "name": "typescript-eslint-language-service"
+    }
+  ],
   "dependencies": {
     "pathe": "^1.1.2",
     "react": "^18.2.0",
@@ -23,7 +28,7 @@
     "eslint": "^8.55.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
-    "typescript": "^5.2.2",
+    "typescript-eslint-language-service": "^5.0.5",
     "vite": "^5.0.8"
   }
 }
