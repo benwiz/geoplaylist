@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Loading from './components/Loading/Loading';
 import Nav from './components/Nav/Nav';
-import fetchAsciiArt from './utility/asciiFetch';
+import fetchAsciiArt from './util/asciiFetch';
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
