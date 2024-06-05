@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Loading from './components/Loading/Loading';
 import Nav from './components/Nav/Nav';
-import fetchAsciiArt from './utility/asciiFetch';
+import fetchAsciiArt from './util/asciiFetch';
 import Upload from './components/Upload/Upload';
 import Map from './components/Map/Map';
 
