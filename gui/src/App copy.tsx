@@ -11,16 +11,18 @@ const App: React.FC = () => {
   const [asciiArt, setAsciiArt] = useState<string | null>(null);
 
   useEffect(() => {
-    // fetch('http://localhost:8008/test/health')
-    //   .then((r) => r.json())
-    //   .then(console.log);
-    // fetch('http://localhost:8008/test/csv')
-    //   .then((r) => r.text())
-    //   .then(console.log);
-    // fetch('http://localhost:8008/pretrained') // just an example, a functioning upload is more important than rendering any results right now.
-    //   .then((r) => r.text())
-    //   .then(console.log);
+    fetch('http://localhost:8008/test/health')
+      .then((r) => r.json())
+      .then(console.log);
+    fetch('http://localhost:8008/test/csv')
+      .then((r) => r.text())
+      .then(console.log);
+    fetch('http://localhost:8008/pretrained') // just an example, a functioning upload is more important than rendering any results right now.
+      .then((r) => r.text())
+      .then(console.log);
+  }, []);
 
+  useEffect(() => {
     // Simulate a 2-second loading state when the component first mounts
     const initialLoadingTimeout = setTimeout(() => {
       setIsLoading(false);
@@ -44,13 +46,13 @@ const App: React.FC = () => {
         <Loading />
       ) : (
         <>
-          {/* <Nav /> */}
+          <Nav />
           <Map />
-          {/* <div>
+          <div>
             Welcome, to jurassic park
             {asciiArt && <pre>{asciiArt}</pre>}
           </div>
-          <Upload /> */}
+          <Upload />
         </>
       )}
     </>

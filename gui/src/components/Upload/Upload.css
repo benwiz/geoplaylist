@@ -1,0 +1,16 @@
+.continer {
+  border-style: solid;
+  border-radius: 1rem;
+  border-width: 2px;
+  border-color: azure;
+}
+
+.itmes {
+  display: flex;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
