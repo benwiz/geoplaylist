@@ -10,11 +10,12 @@ import Map from './components/Map/Map';
 
 const spotifyClientId = "641da771c201429da8ec99a659aa5ff6"; // TODO read this from env vars at compile time
 
+// KURT -> ExampleSpotifyUsage is an example, feel free to modify or delete it.
 const ExampleSpotifyUsage: React.FC = () => {
   const [spotifyToken, setSpotifyToken] = useState<SpotifyApi.SpotifyToken | null>(SpotifyApi.makeToken());
   const [playlistName, setPlaylistName] = useState<string>("");
   const [playlistId, setPlaylistId] = useState<string>("");
-  const [uris, setUris] = useState<string>(""); // I'm being lazy, we don't really want a csv here, we want an array of URIs, but I'm calling `.split(",")` later to get that string[]
+  const [uris, setUris] = useState<string>(""); // I'm being lazy since I don't want to create multiple inputs with more complex state, we don't really want a csv here, we want an array of URIs (see SpotifyApi.createPlaylist function signature), but I'm calling `.split(",")` later to get that string[]
 
   return (
     <>
@@ -29,7 +30,7 @@ const ExampleSpotifyUsage: React.FC = () => {
           <div style={{display: "block", margin: 5}}>
             <label>
               {"Playlist Name: "}
-              <input type={"text"} onChange={e => setPlaylistName(e.target.value)} />
+              <input type={"text"} onChange={e => setPlaylistName(e.target.value)} /> {/* purposely an uncontrolled component, leaving behind the visible but non-functional playlist name text is is nice ux for this particular example */}
               {" "}
             </label>
             <Spotify.CreatePlaylistButton
