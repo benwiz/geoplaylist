@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import SpotifyApi from '../../util/spotifyApi';
 
-const LoginButton: React.FC = ({ clientId }: {clientId: string}) => {
-  const onClick = (e): void => {SpotifyApi.redirect(clientId)};
+const LoginButton = ({ clientId }: {clientId: string}) => {
+  const onClick = (_e: any): void => {SpotifyApi.redirect(clientId)};
   return <button onClick={onClick}>Connect to Spotify</button>;
 };
 
-const LogoutButton: React.FN = ({ callback }: {callback: Function}) => {
-  const onClick = (e): void => {
+const LogoutButton = ({ callback }: {callback: Function}) => {
+  const onClick = (_e: any): void => {
     SpotifyApi.clearToken();
     callback();
   };
   return <button onClick={onClick}>Disconnect Spotify</button>;
 };
 
-const LogUserPlaylistsButton: React.FN = ({ token }: {token: SpotifyToken}) => {
-  const onClick = (e): void => {
+const LogUserPlaylistsButton = ({ token }: {token: SpotifyApi.SpotifyToken}) => {
+  const onClick = (_e: any): void => {
     SpotifyApi.getUserPlaylists(token)
-      .then((playlists) => {
+      .then((playlists: SpotifyApi.Playlist[]) => {
         console.log(playlists);
       });
   };

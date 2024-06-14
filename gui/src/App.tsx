@@ -47,8 +47,6 @@ const App: React.FC = () => {
     return () => clearTimeout(initialLoadingTimeout);
   }, []);
 
-  // TODO instead of isLoading we want to wait for SpotifyApi.isTokenValue to be non-null
-
   return (
     <>
       {SpotifyApi.isValidToken(spotifyToken) ? (

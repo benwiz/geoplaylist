@@ -5,7 +5,7 @@ type SpotifyToken = {
   expiresAt: Date;
 };
 
-const removeHash: void = () => {
+const removeHash = (): void => {
   history.pushState("", document.title, window.location.pathname + window.location.search);
 };
 
@@ -37,7 +37,7 @@ const makeToken: SpotifyToken | null | void = () => {
 
 /** Return true or false depending if it is still valid.
 If it is invalid, remove the localStorage entry. **/
-const isValidToken: boolean = (token: SpotifyToken) => {
+const isValidToken = (token: SpotifyToken): boolean => {
   if (token) {
     if (new Date < token.expiresAt) {
       return true;
@@ -48,11 +48,11 @@ const isValidToken: boolean = (token: SpotifyToken) => {
   }
 };
 
-const clearToken: void = () => {
+const clearToken = (): void => {
   window.localStorage.removeItem("spotify-token");
 };
 
-const redirect: void = (clientId: string) => {
+const redirect = (clientId: string): void => {
   const scopes = encodeURIComponent(
     ["playlist-read-private"
       // "playlist-modify-private",
@@ -98,7 +98,7 @@ type Playlist = {
 };
 
 /** https://developer.spotify.com/documentation/web-api/reference/get-a-list-of-current-users-playlists **/
-const getUserPlaylistsInner: Promise<Playlist[]> = (token: SpotifyToken, url: string, items<Playlist[]>) => {
+const getUserPlaylistsInner = (token: SpotifyToken, url: string, items<Playlist[]>): Promise<Playlist[]> => {
   return fetch(url, {
     method: "GET",
     headers: {
@@ -115,7 +115,7 @@ const getUserPlaylistsInner: Promise<Playlist[]> = (token: SpotifyToken, url: st
     });
 };
 
-const getUserPlaylists: Promise<Playlist[]> = (token: SpotifyToken) => {
+const getUserPlaylists = (token: SpotifyToken): Promise<Playlist[]> => {
   return getUserPlaylistsInner(
     token,
     "https://api.spotify.com/v1/me/playlists?limit=50&offset=0",
