@@ -12,7 +12,7 @@ const spotifyClientId = "641da771c201429da8ec99a659aa5ff6"; // TODO read this fr
 
 // KURT -> ExampleSpotifyUsage is an example, feel free to modify or delete it.
 const ExampleSpotifyUsage: React.FC = () => {
-  const [spotifyToken, setSpotifyToken] = useState<SpotifyApi.SpotifyToken | null>(SpotifyApi.makeToken());
+  const [spotifyToken, setSpotifyToken] = useState<SpotifyApi.SpotifyToken | null>(() => SpotifyApi.makeToken());
   const [playlistName, setPlaylistName] = useState<string>("");
   const [playlistId, setPlaylistId] = useState<string>("");
   const [uris, setUris] = useState<string>(""); // I'm being lazy since I don't want to create multiple inputs with more complex state, we don't really want a csv here, we want an array of URIs (see SpotifyApi.createPlaylist function signature), but I'm calling `.split(",")` later to get that string[]
@@ -59,7 +59,7 @@ const ExampleSpotifyUsage: React.FC = () => {
             />
           </div>
 
-          <span>Example Track URI CSV:</span>
+          <span>Example Track URI CSV (copy and paste this into the input field):</span>
           <span style={{display: "block"}}>spotify:track:4YEU9N2XAE0DfUwxWI5ijA,spotify:track:5GPhq2qHJgSQalqCp0RccS,spotify:track:13NiyfKg0aELrTWvgVL7eH</span>
         </>
       ) : (
