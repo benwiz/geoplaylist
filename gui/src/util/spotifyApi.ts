@@ -53,13 +53,10 @@ const isValidToken = (token: SpotifyToken): boolean => {
 };
 
 const redirect = (clientId: string): void => {
-  const scopes = encodeURIComponent(
-    ["playlist-read-private"
-      // "playlist-modify-private",
-      // "playlist-modify-public"
-      // "user-library-read" // think this isn't needed
-      // "user-read-private" // think this isn't needed
-    ].join(" "));
+  const scopes = encodeURIComponent([
+    "playlist-read-private",
+    "playlist-modify-private",
+    "playlist-modify-public"].join(" "));
   const redirectUri = window.location.origin;
   const path = window.location.pathname;
   const hash = window.location.hash;
@@ -69,7 +66,7 @@ const redirect = (clientId: string): void => {
     "&client_id=", clientId,
     "&scope=", scopes,
     "&redirect_uri=", encodeURIComponent(redirectUri + path),
-    "&state=", encodeURIComponent(hash)].join("");
+    "&state=", encodeURIComponent(hash)].join(""); // maintain the hash state for future use... we're not using hash currently so it doesn't matter.
   window.location = spotifyLoginUri;
 };
 
