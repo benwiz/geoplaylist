@@ -14,7 +14,7 @@ const ExampleSpotifyUsage: React.FC = () => {
   const [spotifyToken, setSpotifyToken] = useState<SpotifyApi.SpotifyToken | null>(SpotifyApi.makeToken());
   const [playlistName, setPlaylistName] = useState<string>("");
   const [playlistId, setPlaylistId] = useState<string>("");
-  const [uris, setUris] = useState<string>(""); // I'm being lazy, we don't really want a csv here, we want an array of URIs because the SpotifyApi.addTracksToPlaylist function will join them into a csv
+  const [uris, setUris] = useState<string>(""); // I'm being lazy, we don't really want a csv here, we want an array of URIs, but I'm calling `.split(",")` later to get that string[]
 
   return (
     <>
@@ -48,17 +48,18 @@ const ExampleSpotifyUsage: React.FC = () => {
             </label>
             <label>
               {"Track URI CSV: "}
-              <input type={"text"} onChange={e => setUris(e.target.value)} />
+              <input type={"text"} value={uris} onChange={e => setUris(e.target.value)} />
             </label>
             <Spotify.AddTracksToPlaylistButton
               token={spotifyToken}
               playlistId={playlistId}
-              uris={uris.split(",")} />
+              uris={uris.split(",").filter(s => !!s)}
+              callback={_ => setUris("")}
+            />
           </div>
 
-
-          Example Track URI CSV:
-          spotify:track:4YEU9N2XAE0DfUwxWI5ijA,spoify:track:5GPhq2qHJgSQalqCp0RccS,spotify:track:13NiyfKg0aELrTWvgVL7eH
+          <span>Example Track URI CSV:</span>
+          <span style={{display: "block"}}>spotify:track:4YEU9N2XAE0DfUwxWI5ijA,spotify:track:5GPhq2qHJgSQalqCp0RccS,spotify:track:13NiyfKg0aELrTWvgVL7eH</span>
         </>
       ) : (
         <Spotify.LoginButton clientId={spotifyClientId}/>

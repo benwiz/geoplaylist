@@ -35,11 +35,12 @@ const CreatePlaylistButton = ({ token, name, callback }: {token: SpotifyApi.Spot
   return <button onClick={onClick} disabled={!name || loading}>Create Playlist</button>;
 };
 
-const AddTracksToPlaylistButton = ({ token, playlistId, uris }: {token: SpotifyToken, playlistId: string, uris: string[]}) => {
+const AddTracksToPlaylistButton = ({ token, playlistId, uris, callback }: {token: SpotifyToken, playlistId: string, uris: string[], callback: Function}) => {
   const [loading, setLoading] = useState(false);
   const onClick = (_e: any): void => {
     setLoading(true);
     SpotifyApi.addTracksToPlaylist(token, playlistId, uris)
+      .then(callback)
       .then(_ => setLoading(false));
   };
   return <button onClick={onClick} disabled={!playlistId || uris.length == 0 || loading}>Add to Playlist</button>;
