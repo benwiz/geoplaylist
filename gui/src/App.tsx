@@ -24,7 +24,7 @@ const App: React.FC = () => {
     // Simulate a 2-second loading state when the component first mounts
     const initialLoadingTimeout = setTimeout(() => {
       setIsLoading(false);
-    }, 2000);
+    }, 0);
 
     // Grab ascii art from .txt
     fetchAsciiArt()
