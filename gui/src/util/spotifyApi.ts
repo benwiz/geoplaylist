@@ -35,6 +35,10 @@ const makeToken: SpotifyToken | null | void = () => {
   }
 };
 
+const clearToken = (): void => {
+  window.localStorage.removeItem("spotify-token");
+};
+
 /** Return true or false depending if it is still valid.
 If it is invalid, remove the localStorage entry. **/
 const isValidToken = (token: SpotifyToken): boolean => {
@@ -42,14 +46,10 @@ const isValidToken = (token: SpotifyToken): boolean => {
     if (new Date < token.expiresAt) {
       return true;
     } else {
-      window.localStorage.removeItem("spotify-token");
+      clearToken();
       return false;
     }
   }
-};
-
-const clearToken = (): void => {
-  window.localStorage.removeItem("spotify-token");
 };
 
 const redirect = (clientId: string): void => {
