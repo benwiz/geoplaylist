@@ -120,6 +120,9 @@ const getUserPlaylists = (token: SpotifyToken): Promise<Playlist[]> => {
   );
 };
 
+// TODO https://developer.spotify.com/documentation/web-api/reference/create-playlist
+// TODO https://developer.spotify.com/documentation/web-api/reference/add-tracks-to-playlist
+
 export default {
   makeToken, isValidToken, redirect, clearToken, // auth functions
   getUserPlaylists
