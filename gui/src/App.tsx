@@ -8,17 +8,68 @@ import Spotify from './components/Spotify/Spotify';
 import Upload from './components/Upload/Upload';
 import Map from './components/Map/Map';
 
-const clientId = "641da771c201429da8ec99a659aa5ff6"; // TODO read this from env vars at compile time
+const spotifyClientId = "641da771c201429da8ec99a659aa5ff6"; // TODO read this from env vars at compile time
+
+const ExampleSpotifyUsage: React.FC = () => {
+  const [spotifyToken, setSpotifyToken] = useState<SpotifyApi.SpotifyToken | null>(SpotifyApi.makeToken());
+  const [playlistName, setPlaylistName] = useState<string>("");
+  const [playlistId, setPlaylistId] = useState<string>("");
+  const [uris, setUris] = useState<string>(""); // I'm being lazy, we don't really want a csv here, we want an array of URIs because the SpotifyApi.addTracksToPlaylist function will join them into a csv
+
+  return (
+    <>
+      {SpotifyApi.isValidToken(spotifyToken) ? (
+        <>
+          <div style={{display: "block", margin: 5}}>
+            <Spotify.LogoutButton callback={() => setSpotifyToken(null)} />
+          </div>
+          <div style={{display: "block", margin: 5}}>
+            <Spotify.LogUserPlaylistsButton token={spotifyToken} />
+          </div>
+          <div style={{display: "block", margin: 5}}>
+            <label>
+              {"Playlist Name: "}
+              <input type={"text"} onChange={e => setPlaylistName(e.target.value)} />
+              {" "}
+            </label>
+            <Spotify.CreatePlaylistButton
+              token={spotifyToken}
+              name={playlistName}
+              callback={(r) => {
+                setPlaylistId(r.id);
+                setPlaylistName("");
+              }}
+            />
+          </div>
+          <div style={{display: "block", margin: 5}}>
+            <label>
+              {"Playlist ID: "}
+              <input type={"text"} value={playlistId} onChange={e => setUris(e.target.value)} />
+            </label>
+            <label>
+              {"Track URI CSV: "}
+              <input type={"text"} onChange={e => setUris(e.target.value)} />
+            </label>
+            <Spotify.AddTracksToPlaylistButton
+              token={spotifyToken}
+              playlistId={playlistId}
+              uris={uris.split(",")} />
+          </div>
+
+
+          Example Track URI CSV:
+          spotify:track:4YEU9N2XAE0DfUwxWI5ijA,spoify:track:5GPhq2qHJgSQalqCp0RccS,spotify:track:13NiyfKg0aELrTWvgVL7eH
+        </>
+      ) : (
+        <Spotify.LoginButton clientId={spotifyClientId}/>
+      )}
+    </>
+  );
+};
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [asciiArt, setAsciiArt] = useState<string | null>(null);
-  const [spotifyToken, setSpotifyToken] = useState<SpotifyApi.SpotifyToken | null>(SpotifyApi.makeToken());
-  const [playlistName, setPlaylistName] = useState<string>(null);
-
-  useEffect(() => {
-
-  }, []);
 
   useEffect(() => {
     // fetch('http://localhost:8008/test/health')
@@ -50,25 +101,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      {SpotifyApi.isValidToken(spotifyToken) ? (
-        <>
-          <div style={{display: "block", margin: 5}}>
-            <Spotify.LogoutButton callback={() => setSpotifyToken(null)} />
-          </div>
-          <div style={{display: "block", margin: 5}}>
-            <Spotify.LogUserPlaylistsButton token={spotifyToken} />
-          </div>
-          <div style={{display: "block", margin: 5}}>
-            <label for={"playlistName"} onChange={e => setPlaylistName(e.target.value)}>
-              {"Playlist Name: "}
-              <input name={"playlistName"} type={"text"} />
-            </label>
-            <Spotify.CreatePlaylistButton token={spotifyToken} name={playlistName} />
-          </div>
-        </>
-      ) : (
-        <Spotify.LoginButton clientId={clientId}/>
-      )}
+      <ExampleSpotifyUsage />
 
       {isLoading ? (
         <Loading />

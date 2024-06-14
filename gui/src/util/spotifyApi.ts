@@ -282,9 +282,23 @@ const createPlaylist = (token: SpotifyToken, name: string): Promise<CreatePlayli
   }).then((r) => r.json());
 };
 
-/** TODO https://developer.spotify.com/documentation/web-api/reference/add-tracks-to-playlist **/
+type AddTracksToPlaylistResponse = {
+  snapshot_id: string;
+};
+
+/** https://developer.spotify.com/documentation/web-api/reference/add-tracks-to-playlist **/
+const addTracksToPlaylist = (token: SpotifyToken, playlistId: string, uris: string[]): Promise<AddTracksToPlaylistResponse> => {
+  return fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token.accessToken
+    },
+    body: JSON.stringify({uris: uris})
+  }).then((r) => r.json());
+};
 
 export default {
-  makeToken, isValidToken, redirect, clearToken, // auth functions
-  getUserPlaylists, createPlaylist
+  makeToken, isValidToken, redirect, clearToken, // auth
+  getUserPlaylists, createPlaylist, addTracksToPlaylist // playlist management
 };

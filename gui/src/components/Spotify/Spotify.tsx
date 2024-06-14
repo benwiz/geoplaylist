@@ -24,15 +24,28 @@ const LogUserPlaylistsButton = ({ token }: {token: SpotifyApi.SpotifyToken}) => 
   return <button onClick={onClick}>Log Spotify playlists to console</button>;
 };
 
-const CreatePlaylistButton = ({ token, name }: {token: SpotifyApi.SpotifyToken, name: string}) => {
+const CreatePlaylistButton = ({ token, name, callback }: {token: SpotifyApi.SpotifyToken, name: string, callback: Function}) => {
+  const [loading, setLoading] = useState(false);
   const onClick = (_e: any): void => {
-    console.log("start create playlist");
+    setLoading(true)
     SpotifyApi.createPlaylist(token, name)
-      .then((response: SpotifyApi.CreatePlaylistResponse) => {
-        console.log(response);
-      });
+      .then(callback)
+      .then(_ => setLoading(false));
   };
-  return <button onClick={onClick} disabled={!name}>Create Playlist</button>;
+  return <button onClick={onClick} disabled={!name || loading}>Create Playlist</button>;
 };
 
-export default { LoginButton, LogoutButton, LogUserPlaylistsButton, CreatePlaylistButton };
+const AddTracksToPlaylistButton = ({ token, playlistId, uris }: {token: SpotifyToken, playlistId: string, uris: string[]}) => {
+  const [loading, setLoading] = useState(false);
+  const onClick = (_e: any): void => {
+    setLoading(true);
+    SpotifyApi.addTracksToPlaylist(token, playlistId, uris)
+      .then(_ => setLoading(false));
+  };
+  return <button onClick={onClick} disabled={!playlistId || uris.length == 0 || loading}>Add to Playlist</button>;
+};
+
+export default {
+  LoginButton, LogoutButton, LogUserPlaylistsButton,
+  CreatePlaylistButton, AddTracksToPlaylistButton
+};
