@@ -24,4 +24,15 @@ const LogUserPlaylistsButton = ({ token }: {token: SpotifyApi.SpotifyToken}) => 
   return <button onClick={onClick}>Log Spotify playlists to console</button>;
 };
 
-export default { LoginButton, LogoutButton, LogUserPlaylistsButton };
+const CreatePlaylistButton = ({ token, name }: {token: SpotifyApi.SpotifyToken, name: string}) => {
+  const onClick = (_e: any): void => {
+    console.log("start create playlist");
+    SpotifyApi.createPlaylist(token, name)
+      .then((response: SpotifyApi.CreatePlaylistResponse) => {
+        console.log(response);
+      });
+  };
+  return <button onClick={onClick} disabled={!name}>Create Playlist</button>;
+};
+
+export default { LoginButton, LogoutButton, LogUserPlaylistsButton, CreatePlaylistButton };

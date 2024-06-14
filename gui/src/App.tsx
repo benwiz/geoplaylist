@@ -14,6 +14,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [asciiArt, setAsciiArt] = useState<string | null>(null);
   const [spotifyToken, setSpotifyToken] = useState<SpotifyApi.SpotifyToken | null>(SpotifyApi.makeToken());
+  const [playlistName, setPlaylistName] = useState<string>(null);
 
   useEffect(() => {
 
@@ -51,22 +52,34 @@ const App: React.FC = () => {
     <>
       {SpotifyApi.isValidToken(spotifyToken) ? (
         <>
-          <Spotify.LogoutButton callback={() => setSpotifyToken(null)} />
-          <Spotify.LogUserPlaylistsButton token={spotifyToken} />
+          <div style={{display: "block", margin: 5}}>
+            <Spotify.LogoutButton callback={() => setSpotifyToken(null)} />
+          </div>
+          <div style={{display: "block", margin: 5}}>
+            <Spotify.LogUserPlaylistsButton token={spotifyToken} />
+          </div>
+          <div style={{display: "block", margin: 5}}>
+            <label for={"playlistName"} onChange={e => setPlaylistName(e.target.value)}>
+              {"Playlist Name: "}
+              <input name={"playlistName"} type={"text"} />
+            </label>
+            <Spotify.CreatePlaylistButton token={spotifyToken} name={playlistName} />
+          </div>
         </>
       ) : (
-          <Spotify.LoginButton clientId={clientId}/>
-          )}
+        <Spotify.LoginButton clientId={clientId}/>
+      )}
 
       {isLoading ? (
         <Loading />
+
       ) : (
         <>
           {/* <Nav /> */}
           <Map />
           {/* <div>
-            Welcome, to jurassic park
-            {asciiArt && <pre>{asciiArt}</pre>}
+          Welcome, to jurassic park
+          {asciiArt && <pre>{asciiArt}</pre>}
           </div>
           <Upload /> */}
         </>
