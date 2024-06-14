@@ -1,14 +1,23 @@
 'use strict';
 import React, { useState, useEffect } from 'react';
+import fetchAsciiArt from './util/asciiFetch';
+import SpotifyApi from './util/spotifyApi';
 import Loading from './components/Loading/Loading';
 import Nav from './components/Nav/Nav';
-import fetchAsciiArt from './util/asciiFetch';
+import Spotify from './components/Spotify/Spotify';
 import Upload from './components/Upload/Upload';
 import Map from './components/Map/Map';
+
+const clientId = "641da771c201429da8ec99a659aa5ff6"; // TODO read this from env vars at compile time
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [asciiArt, setAsciiArt] = useState<string | null>(null);
+  const [spotifyToken, setSpotifyToken] = useState<SpotifyApi.SpotifyToken | null>(SpotifyApi.makeToken());
+
+  useEffect(() => {
+
+  }, []);
 
   useEffect(() => {
     // fetch('http://localhost:8008/test/health')
@@ -38,8 +47,19 @@ const App: React.FC = () => {
     return () => clearTimeout(initialLoadingTimeout);
   }, []);
 
+  // TODO instead of isLoading we want to wait for SpotifyApi.isTokenValue to be non-null
+
   return (
     <>
+      {SpotifyApi.isValidToken(spotifyToken) ? (
+        <>
+          <Spotify.LogoutButton callback={() => setSpotifyToken(null)} />
+          <Spotify.LogUserPlaylistsButton token={spotifyToken} />
+        </>
+      ) : (
+          <Spotify.LoginButton clientId={clientId}/>
+          )}
+
       {isLoading ? (
         <Loading />
       ) : (
