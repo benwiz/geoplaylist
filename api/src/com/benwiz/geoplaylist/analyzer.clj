@@ -24,6 +24,7 @@
 ;; - I wonder if a vector of time parts [YYYY MM DD mm ss nn] would be better
 
 ;; TODO probably should use instrumented fns instead of validator and explainer
+;; TODO It will be more organized to split the listening history into 3 namespaces: spotify-short, spotify-extended, and lastfm
 
 (mr/set-default-registry! ;; should this be run here or elsewhere?
   (mr/composite-registry
@@ -104,7 +105,7 @@
                  {:lat       (/ latitudeE7 10000000.)
                   :lng       (/ longitudeE7 10000000.)
                   :timestamp (OffsetDateTime/parse timestamp)})))
-        (reverse (:locations records))))
+        (:locations records)))
 
 (defn get-lastfm-recenttracks
   [readable]
@@ -117,96 +118,69 @@
         (keyword k)))))
 
 (defn lastfm-tracks
-  [pages]
-  (into []
-        (comp
-          (mapcat :track)
-          (map (fn [{:keys [artist mbid album name url date]}]
-                 {:id        (str "lastfm/" (or (not-empty mbid) (str (UUID/randomUUID))))
-                  :timestamp (OffsetDateTime/of
-                               (LocalDateTime/ofEpochSecond ;; Jumping through LocalDateTime seems dumb
-                                 (Integer/parseInt (:uts date))
-                                 0 ZoneOffset/UTC)
-                               ZoneOffset/UTC)
-                  :artist    (:text artist)
-                  :album     (:text album)
-                  :name      name})))
-        pages))
+  ([pages]
+   (lastfm-tracks nil pages))
+  ([xform pages]
+   (into []
+         (comp
+           (or xform (map identity))
+           (mapcat :track)
+           (map (fn [{:keys [artist mbid album name url date]}]
+                  {:id        (str "lastfm/" (or (not-empty mbid) (str (UUID/randomUUID))))
+                   :timestamp (OffsetDateTime/of
+                                (LocalDateTime/ofEpochSecond ;; Jumping through LocalDateTime seems dumb
+                                  (Integer/parseInt (:uts date))
+                                  0 ZoneOffset/UTC)
+                                ZoneOffset/UTC)
+                   :artist    (:text artist)
+                   :album     (:text album)
+                   :name      name})))
+         pages)))
 
-(defn get-spotify-streaming-history-short
-  [files]
-  (into []
-        (mapcat #(cheshire/parse-stream (io/reader %) keyword))
-        files))
+(defn spotify-tracks-short ;; TODO incomplete
+  ([streams]
+   (spotify-tracks-short nil streams))
+  ([xform streams]
+   (into []
+         (comp
+           (mapcat #(cheshire/parse-stream (io/reader %) keyword))
+           (or xform (map identity))
+           (map (fn [{:keys [endTime artistName trackName msPlayed]}]
+                  {:id        (-> (str "spotify/" artistName "/" trackName) ;; would need to make spotify api request to get the real id, annoying
+                                  (str/replace \space \_))
+                   :timestamp (.. (LocalDateTime/parse endTime ;; I asusme this is UTC
+                                                       (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm"))
+                                  (atZone (ZoneId/of "UTC"))
+                                  toOffsetDateTime)
+                   :artist    artistName
+                   ;; :album     "" ;; would need to make spotify api request to know this
+                   :name      trackName})))
+         streams)))
 
-(defn spotify-tracks-short
-  [streams]
-  (into []
-        (map (fn [{:keys [endTime artistName trackName msPlayed]}]
-               {:id        (-> (str "spotify/" artistName "/" trackName) ;; would need to make spotify api request to get the real id, annoying
-                               (str/replace \space \_))
-                :timestamp (.. (LocalDateTime/parse endTime ;; I asusme this is UTC
-                                                    (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm"))
-                               (atZone (ZoneId/of "UTC"))
-                               toOffsetDateTime)
-                :artist    artistName
-                ;; :album     "" ;; would need to make spotify api request to know this
-                :name      trackName}))
-        (reverse streams)))
-
-;; TODO The following 2 functions are just a starting point. I don't yet have the data.
-
-(defn get-spotify-streaming-history-extended
-  [files]
-  (into []
-        (mapcat #(cheshire/parse-stream (io/reader %) keyword))
-        files))
 (defn spotify-tracks-extended
-  [streams]
-  (into []
-        (map (fn [{:keys [ts spotify_track_uri]}]
-               {:id        (-> (str "spotify/" (last (str/split spotify_track_uri ":" 3)))
-                               (str/replace \space \_))
-                :timestamp (.. (LocalDateTime/parse ts ;; I asusme this is UTC
-                                                    (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm"))
-                               (atZone (ZoneId/of "UTC"))
-                               toOffsetDateTime)
-                ;; would need to make spotify api request to know artist, album, name
-                ;; :artist    ""
-                ;; :album     ""
-                ;; :name      ""
-                }))
-        (reverse streams)))
+  ([streams]
+   (spotify-tracks-extended nil streams))
+  ([xform streams]
+   (into []
+         (comp
+           (mapcat #(cheshire/parse-stream (io/reader %) keyword))
+           (filter (comp not-empty :spotify_track_uri))
+           (or xform (map identity))
+           (map (fn [{:keys [ts
+                             spotify_track_uri
+                             master_metadata_album_artist_name
+                             master_metadata_album_album_name
+                             master_metadata_track_name] :as record}]
+                  {:id        (str "spotify/" (last (str/split spotify_track_uri #":" 3)))
+                   :timestamp (OffsetDateTime/parse ts)
+                   :artist    master_metadata_album_artist_name
+                   :album     master_metadata_album_album_name
+                   :name      master_metadata_track_name})))
+         streams)))
 
-(comment ;; TODO Explore spotify extended data
-
-  {:ts                "2022-12-01 00:05" ;; endTime
-   :ms_played         726600
-   :spotify_track_uri "spotify:track:3lqkdtSptgT5JbREVV4U7H"
-
-   :username                          ""
-   :platform                          ""
-   :conn_country                      ""
-   :ip_addr_decrypted                 ""
-   :user_agent_decrypted              ""
-   :master_metadata_track_name        ""
-   :master_metadata_album_artist_name ""
-   :master_metadata_album_album_name  ""
-   :episode_name                      ""
-   :episode_show_name                 ""
-   :spotify_episode_uri               ""
-   :reason_start                      ""
-   :reason_end                        ""
-   :shuffle                           ""
-   :skipped                           ""
-   :offline                           ""
-   :offline_timestamp                 ""
-   :incognito_mode                    ""}
-
-  )
-
+;; TODO this is failing on spotify data
 (defn nearest-location ;; TODO I could probably do this more efficiently from tech.ml.dataset instead of a recursive Clojure fn.
-   ;; TODO This is dropping wayyy more tracks than expected, I need to review this whole algorithm
+  ;; TODO This is dropping wayyy more tracks than expected, I need to review this whole algorithm
   [initial-tracks initial-locations]
   (loop [track     (first initial-tracks)
          tracks    (rest initial-tracks)
@@ -277,13 +251,15 @@
 (def track-filter-xform (track-play-count-filter-xform 10))
 
 (defn parse-inputs ;; TODO it'd be better to validate the real inputs instead of the parsed inputs
-  [{:keys [spotify-streaming-history-short-files spotify-streaming-history-extended-files lastfm-recenttracks-file google-locations-file]}]
+  [{:keys [spotify-streaming-history-extended-files
+           spotify-streaming-history-short-files
+           lastfm-recenttracks-file
+           google-locations-file]}]
   (let [locations        (google-locations (get-google-location-records google-locations-file))
         tracks           (cond
-                           spotify-streaming-history-short-files
-                           (spotify-tracks-short (get-spotify-streaming-history-short spotify-streaming-history-short-files))
-                           lastfm-recenttracks-file
-                           (lastfm-tracks (get-lastfm-recenttracks lastfm-recenttracks-file)))
+                           spotify-streaming-history-extended-files (spotify-tracks-extended spotify-streaming-history-extended-files)
+                           spotify-streaming-history-short-files    (spotify-tracks-short spotify-streaming-history-short-files)
+                           lastfm-recenttracks-file                 (lastfm-tracks (get-lastfm-recenttracks lastfm-recenttracks-file)))
         locations-valid? (locations-validator locations)
         tracks-valid?    (tracks-validator tracks)]
     (if-some [error
@@ -298,19 +274,31 @@
                                                        (:errors (tracks-explainer tracks))))))]
       (throw (ex-info "Parsed inputs are invalid." error))
       (do
-        (println "Parsed inputs are valid...")
+        (println "Parsed inputs are valid.")
         [locations tracks]))))
 
-(defn train
-  [{:keys [spotify-streaming-history-short-files lastfm-recenttracks-file google-locations-file n]
+(defn train ;; very incomplete
+  [{:keys [spotify-streaming-history-extended-files
+           spotify-streaming-history-short-files
+           lastfm-recenttracks-file
+           google-locations-file
+           n]
     :or   {n 10}
     :as   args}]
-  (assert (or (and (some? spotify-streaming-history-short-files)
+  (assert (or (and (some? spotify-streaming-history-extended-files)
+                   (nil? spotify-streaming-history-short-files)
                    (nil? lastfm-recenttracks-file))
-              (and (nil? spotify-streaming-history-short-files)
+              (and (nil? spotify-streaming-history-extended-files)
+                   (some? spotify-streaming-history-short-files)
+                   (nil? lastfm-recenttracks-file))
+              (and (nil? spotify-streaming-history-extended-files)
+                   (nil? spotify-streaming-history-short-files)
                    (some? lastfm-recenttracks-file)))
-          "Either spotify-streaming-history-short-files or is allowed lastfm-recenttracks-file")
+          "One of spotify-streaming-history-extended-files, spotify-streaming-history-short-files, or lastfm-recenttracks-file is allowed.")
+  (assert google-locations-file)
   (let [[locations tracks] (parse-inputs args)
+        locations          (into [] (reverse (sort-by :timestamp locations)))
+        tracks             (into [] (reverse (sort-by :timestamp tracks)))
         tracks-with-loc    (let [locs (nearest-location tracks locations)]
                              (if (results-validator locs)
                                locs
@@ -320,7 +308,7 @@
                                 ;; TODO Confusingly, filtering here is way less aggressive than filtering before nearest location. I'm confused why it's not exactly the same.
                                 ;; Logically, I think it makes more sense to filtering before joining with the location data.
                                 (into [] track-filter-xform))
-        ds                 (ds/dataset tracks-with-loc {:parser-fn {:loc/timestamp #(.toString %)
+        ds                 (ds/dataset tracks-with-loc {:parser-fn {:loc/timestamp   #(.toString %)
                                                                     :track/timestamp #(.toString %)}})
         pipeline-fn        (ml/pipeline (mm/select-columns [:loc/lat :loc/lng])
                                         {:metamorph/id :kmeans-model}
@@ -354,20 +342,62 @@
 
 (comment ;; Scratch
 
-  (take 1 (spotify-tracks-short (get-spotify-streaming-history-short [(io/resource "StreamingHistory0.json") (io/resource "StreamingHistory1.json")])))
-  (take 1 (lastfm-tracks (get-lastfm-recenttracks (io/file (io/resource "lastfm-recenttracks-20231130.json")))))
-  (take 1 (get-google-location-records (io/file (io/resource "google-location-records.json"))))
+  (spotify-tracks-short (take 10) [(io/resource "StreamingHistory0.json") (io/resource "StreamingHistory1.json")])
+  (def tracks
+    (spotify-tracks-extended
+      ;; (take 10)
+      [(io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2011-2014_0.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2014_1.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2014-2015_2.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2015-2016_3.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2016-2017_4.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2017-2018_6.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2017_5.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2018-2019_7.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2019-2020_8.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2020-2021_9.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2021-2022_10.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2022_11.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2022-2023_12.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2023_13.json")
+       (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2023_14.json")]))
+  (lastfm-tracks (take 10) (get-lastfm-recenttracks (io/file (io/resource "lastfm-recenttracks-20231130.json"))))
+  (def locations
+    (google-locations (get-google-location-records (io/file (io/resource "google-location-records.json")))))
 
-  (try
-    (def clustered-ds
-      (train {
-              #_#_:spotify-streaming-history-short-files [(io/file (io/resource "StreamingHistory0.json")) (io/file (io/resource "StreamingHistory1.json"))
-                                                      (io/file (io/resource "StreamingHistory2.json")) (io/file (io/resource "StreamingHistory3.json"))
-                                                      (io/file (io/resource "StreamingHistory4.json"))]
-              :lastfm-recenttracks-file                  (io/file (io/resource "lastfm-recenttracks-20231130.json"))
-              :google-locations-file                 (io/file (io/resource "google-location-records.json"))}))
-    (catch Exception e
-      (or (ex-data e) (throw e))))
+
+
+  ;; duplicates?
+  (count
+    (into []
+          (comp
+            (map #(update-keys % {:id :track/id}))
+            track-filter-xform)
+          tracks))
+
+  (def clustered-ds
+    (train {:spotify-streaming-history-extended-files  [(io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2011-2014_0.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2014_1.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2014-2015_2.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2015-2016_3.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2016-2017_4.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2017-2018_6.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2017_5.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2018-2019_7.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2019-2020_8.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2020-2021_9.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2021-2022_10.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2022_11.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2022-2023_12.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2023_13.json")
+                                                        (io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2023_14.json")]
+            #_#_:spotify-streaming-history-short-files [(io/file (io/resource "StreamingHistory0.json"))
+                                                        (io/file (io/resource "StreamingHistory1.json"))
+                                                        (io/file (io/resource "StreamingHistory2.json"))
+                                                        (io/file (io/resource "StreamingHistory3.json"))
+                                                        (io/file (io/resource "StreamingHistory4.json"))]
+            #_#_:lastfm-recenttracks-file              (io/file (io/resource "lastfm-recenttracks-20231130.json"))
+            :google-locations-file                     (io/file (io/resource "google-location-records.json"))}))
 
   (ds/write! clustered-ds "resources/clustered-ds.csv")
 
