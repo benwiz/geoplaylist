@@ -70,7 +70,6 @@ const ExampleSpotifyUsage: React.FC = () => {
 };
 
 const parseCSV = (csv: string) => {
-  console.log("begin parseCSV");
   const lines = csv.split('\n');
   const header = lines[0].split(',');
   const tracks = [];
@@ -82,7 +81,6 @@ const parseCSV = (csv: string) => {
     }
     tracks.push(track);
   }
-  console.log("end parseCSV");
   return tracks;
 }
 
@@ -96,17 +94,15 @@ const App: React.FC = () => {
     // fetch('http://localhost:8008/test/csv')
     //   .then((r) => r.text())
     //   .then(console.log);
-    // fetch('http://localhost:8008/pretrained') // just an example, a functioning upload is more important than rendering any results right now.
+    // fetch('http://localhost:8008/pretrained')
     //   .then((r) => r.text())
     //   .then(console.log);
 
     fetch('clustered-ds.csv')
-      .then((response) => response.text()) // TODO it would be way better to stream the csv directly into a js-object instead of first into a string then into object
+      .then((response) => response.text()) // TODO it would be way better to stream the csv directly into a js-object instead of first into a string then into js-object
       .then(parseCSV)
       .then(setTracks)
       .catch((err) => console.error(err));
-
-    return () => {};
   }, []);
 
   return (
