@@ -75,6 +75,7 @@ const parseCSV = (csv: string) => {
   const tracks = [];
   for (const line of lines.slice(1)) {
     const data = line.split(','); // TODO BUG: what if the artist/track/album contains a comma? The line splitting breaks. I will need to eliminate or escape commas in my api.
+    if (header.length !== data.length) continue; // this is a temporary hack until I sort out my comma issue
     const track = {};
     for (let i=0; i<data.length; i++) {
       track[header[i]] = data[i];
