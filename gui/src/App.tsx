@@ -84,6 +84,11 @@ const App: React.FC = () => {
     //   .then((r) => r.text())
     //   .then(console.log);
 
+    fetch('clustered-ds.csv')
+      .then((r) => r.text())
+      // TODO instead of logging to console, parse the csv into a json object... or maybe not, that's a lot of memory, it's probably better to stream it into just a short array of the "places" column then can use an efficient csv streamer to extract data in real time to build the playlists.
+      .then(console.log);
+
     // Simulate a 2-second loading state when the component first mounts
     const initialLoadingTimeout = setTimeout(() => {
       setIsLoading(false);
