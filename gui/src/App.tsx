@@ -74,7 +74,7 @@ const parseCSV = (csv: string) => {
   const header = lines[0].split(',');
   const tracks = [];
   for (const line of lines.slice(1)) {
-    const data = line.split(',');
+    const data = line.split(','); // TODO BUG: what if the artist/track/album contains a comma? The line splitting breaks. I will need to eliminate or escape commas in my api.
     const track = {};
     for (let i=0; i<data.length; i++) {
       track[header[i]] = data[i];
@@ -100,10 +100,21 @@ const App: React.FC = () => {
 
     fetch('clustered-ds.csv')
       .then((response) => response.text()) // TODO it would be way better to stream the csv directly into a js-object instead of first into a string then into js-object
-      .then(parseCSV)
+      .then(parseCSV) // TODO there is a bug in parseCSV
       .then(setTracks)
       .catch((err) => console.error(err));
   }, []);
+
+  // Explore: log each unique place
+  useEffect(() => {
+    if (tracks) {
+      const places = new Set();
+      for (const track of tracks) {
+        places.add(track.place);
+      }
+      console.log("places", places);
+    }
+  }, [tracks]);
 
   return (
     <>
