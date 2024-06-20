@@ -69,9 +69,25 @@ const ExampleSpotifyUsage: React.FC = () => {
   );
 };
 
+const parseCSV = (csv: string) => {
+  console.log("begin parseCSV");
+  const lines = csv.split('\n');
+  const header = lines[0].split(',');
+  const tracks = [];
+  for (const line of lines.slice(1)) {
+    const data = line.split(',');
+    const track = {};
+    for (let i=0; i<data.length; i++) {
+      track[header[i]] = data[i];
+    }
+    tracks.push(track);
+  }
+  console.log("end parseCSV");
+  return tracks;
+}
+
 const App: React.FC = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [asciiArt, setAsciiArt] = useState<string | null>(null);
+  const [tracks, setTracks] = useState();
 
   useEffect(() => {
     // fetch('http://localhost:8008/test/health')
@@ -86,57 +102,24 @@ const App: React.FC = () => {
 
     fetch('clustered-ds.csv')
       .then((response) => response.text()) // TODO it would be way better to stream the csv directly into a js-object instead of first into a string then into object
-      .then((csv: string) => {
-        const lines = csv.split('\n');
-        const header = lines[0].split(',');
-        const tracks = [];
-        for (const line of lines.slice(1)) {
-          const data = line.split(',');
-          const track = {};
-          for (let i=0; i<data.length; i++) {
-            track[header[i]] = data[i];
-          }
-          tracks.push(track);
-        }
-        return tracks;
-      })
-      .then(console.log)
+      .then(parseCSV)
+      .then(setTracks)
       .catch((err) => console.error(err));
 
-    // Simulate a 2-second loading state when the component first mounts
-    const initialLoadingTimeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 0);
-
-    // Grab ascii art from .txt
-    fetchAsciiArt()
-      .then(setAsciiArt)
-      .catch((e) => {
-        console.log('bad ascii request');
-        setAsciiArt('no dinos here');
-      });
-
-    // Clean up timeout
-    return () => clearTimeout(initialLoadingTimeout);
+    return () => {};
   }, []);
 
   return (
     <>
       <ExampleSpotifyUsage />
-
-      {isLoading ? (
-        <Loading />
-
-      ) : (
+      {tracks ? (
         <>
           {/* <Nav /> */}
           <Map />
-          {/* <div>
-          Welcome, to jurassic park
-          {asciiArt && <pre>{asciiArt}</pre>}
-          </div>
-          <Upload /> */}
+          {/* <Upload /> */}
         </>
+      ) : (
+        <Loading />
       )}
     </>
   );
