@@ -9,7 +9,7 @@ const PopupContent = ({ place }) => {
     // TODO generate playlist (require spotify to be logged in)
     // ... basically the demo component I created in App.tsx is very close to correct
     <span>
-      Location {id}: {listens} listens across {trackIds.size} tracks
+      Location {id}: {listens.toLocaleString()} listens across {trackIds.size.toLocaleString()} tracks
     </span>
   );
 };
@@ -28,6 +28,7 @@ function Map({ places }) {
       />
       {Object.keys(places).map((id) => {
         const place = places[id];
+        place.id = id;
         return (
           <Marker key={id} position={[place.lat, place.lng]}>
             <Popup>
