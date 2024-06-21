@@ -5,8 +5,10 @@ import './Map.css';
 const PopupContent = ({ place }) => {
   const { id, listens, trackIds } = place;
   return (
-    // TODO give the playlist a name
-    // TODO generate playlist (require spotify to be logged in)
+    // TODO require spotify to be logged in, include button to do so if not
+    // TODO give the playlist a name via an input field
+    // TODO generate playlist via a button click
+    // TODO if playlist already exists (or was created via button click) show deep link to spotify
     // ... basically the demo component I created in App.tsx is very close to correct
     <span>
       Location {id}: {listens.toLocaleString()} listens across {trackIds.size.toLocaleString()} tracks

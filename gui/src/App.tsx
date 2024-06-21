@@ -8,9 +8,11 @@ import Spotify from './components/Spotify/Spotify';
 import Upload from './components/Upload/Upload';
 import Map from './components/Map/Map';
 
+// TODO upload components with training configuration controls
+
 const spotifyClientId = "641da771c201429da8ec99a659aa5ff6"; // TODO read this from env vars at compile time
 
-// KURT -> ExampleSpotifyUsage is an example, feel free to modify or delete it.
+
 const ExampleSpotifyUsage: React.FC = () => {
   const [spotifyToken, setSpotifyToken] = useState<SpotifyApi.SpotifyToken | null>(() => SpotifyApi.makeToken());
   const [playlistName, setPlaylistName] = useState<string>("");
