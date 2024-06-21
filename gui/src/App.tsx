@@ -1,5 +1,5 @@
 'use strict';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import fetchAsciiArt from './util/asciiFetch';
 import SpotifyApi from './util/spotifyApi';
 import Loading from './components/Loading/Loading';
@@ -85,8 +85,29 @@ const parseCSV = (csv: string) => {
   return tracks;
 }
 
+const tracks2places = (tracks) => {
+  const places = {};
+  if (tracks) {
+    for (const track of tracks) {
+      if (places[track.place]) {
+        places[track.place].listens++;
+        places[track.place].trackIds.add(track.id);
+      } else {
+        places[track.place] = {
+          listens: 1,
+          trackIds: new Set([track.id]),
+          // it'd be even better to outer shell or more simply would be the center point and radius, but lat+lng of a random sample is easily good enough for now.
+          lat: parseFloat(track.lat),
+          lng: parseFloat(track.lng)};
+      }
+    }
+  }
+  return places;
+};
+
 const App: React.FC = () => {
   const [tracks, setTracks] = useState();
+  const places = useMemo(() => tracks2places(tracks), [tracks]);
 
   useEffect(() => {
     // fetch('http://localhost:8008/test/health')
@@ -106,24 +127,13 @@ const App: React.FC = () => {
       .catch((err) => console.error(err));
   }, []);
 
-  // Explore: log each unique place
-  useEffect(() => {
-    if (tracks) {
-      const places = new Set();
-      for (const track of tracks) {
-        places.add(track.place);
-      }
-      console.log("places", places);
-    }
-  }, [tracks]);
-
   return (
     <>
       <ExampleSpotifyUsage />
       {tracks ? (
         <>
           {/* <Nav /> */}
-          <Map />
+          <Map places={places} />
           {/* <Upload /> */}
         </>
       ) : (

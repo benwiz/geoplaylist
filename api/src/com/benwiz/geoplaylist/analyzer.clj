@@ -297,8 +297,8 @@
           "One of spotify-streaming-history-extended-files, spotify-streaming-history-short-files, or lastfm-recenttracks-file is allowed.")
   (assert google-locations-file)
   (let [[locations tracks] (parse-inputs args)
-        locations          (into [] (reverse (sort-by :timestamp locations)))
-        tracks             (into [] (reverse (sort-by :timestamp tracks)))
+        locations          (into [] (reverse (sort-by :timestamp locations))) ;; oldest to newest, should probably use xf/sort-by during the original parsing xform
+        tracks             (into [] (reverse (sort-by :timestamp tracks))) ;; oldest to newest, should probably use xf/sort-by during the original parsing xform
         tracks-with-loc    (let [locs (nearest-location tracks locations)]
                              (if (results-validator locs)
                                locs
@@ -365,8 +365,6 @@
   (def locations
     (google-locations (get-google-location-records (io/file (io/resource "google-location-records.json")))))
 
-
-
   ;; duplicates?
   (count
     (into []
@@ -374,6 +372,8 @@
             (map #(update-keys % {:id :track/id}))
             track-filter-xform)
           tracks))
+
+  ;; Note that inputting files from oldest to newest will every so slightly help sorting
 
   (def clustered-ds
     (train {:spotify-streaming-history-extended-files  [(io/resource "spotify-extended-streaming-history/Streaming_History_Audio_2011-2014_0.json")
@@ -400,6 +400,7 @@
             :google-locations-file                     (io/file (io/resource "google-location-records.json"))}))
 
   (ds/write! clustered-ds "resources/clustered-ds.csv")
+
 
 
   )
