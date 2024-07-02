@@ -1,29 +1,30 @@
-// import { useState } from 'react';
 import reactLogo from '../../assets/react.svg';
-import './Nav.css';
+import { styled } from '@stitches/react';
+
+const Container = styled('div', {
+  display: 'flex',
+  justifyContent: 'flex-start',
+  height: '40px',
+});
 
 function Nav() {
-  // const [count, setCount] = useState(0);
-
   return (
-    <>
-      <div className='container'>
-        <a
-          // link back to homepage
-          href='./'
-          target='_blank'
-        >
-          <img
-            src={reactLogo}
-            className='logo react'
-            alt='Placehoder logo'
-          />
-        </a>
-        <div className='banner_text'>
-          <p>oh wow, what a nav cmpt</p>
-        </div>
+    <Container>
+      <a
+        // link back to homepage
+        href='./'
+        target='_blank'
+      >
+        <img
+          src={reactLogo}
+          className='logo react'
+          alt='Placehoder logo'
+        />
+      </a>
+      <div className='banner_text'>
+        <p>oh wow, what a nav cmpt</p>
       </div>
-    </>
+    </Container>
   );
 }
 

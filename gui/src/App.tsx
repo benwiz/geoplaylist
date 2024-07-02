@@ -7,65 +7,79 @@ import Nav from './components/Nav/Nav';
 import Spotify from './components/Spotify/Spotify';
 import Upload from './components/Upload/Upload';
 import Map from './components/Map/Map';
+import Tutorial from './components/Tutorial';
 
-// TODO upload components with training configuration controls
-
-const spotifyClientId = "641da771c201429da8ec99a659aa5ff6"; // TODO read this from env vars at compile time
-
+const spotifyClientId = '641da771c201429da8ec99a659aa5ff6'; // TODO read this from env vars at compile time
 
 const ExampleSpotifyUsage: React.FC = () => {
-  const [spotifyToken, setSpotifyToken] = useState<SpotifyApi.SpotifyToken | null>(() => SpotifyApi.makeToken());
-  const [playlistName, setPlaylistName] = useState<string>("");
-  const [playlistId, setPlaylistId] = useState<string>("");
-  const [uris, setUris] = useState<string>(""); // I'm being lazy since I don't want to create multiple inputs with more complex state, we don't really want a csv here, we want an array of URIs (see SpotifyApi.createPlaylist function signature), but I'm calling `.split(",")` later to get that string[]
+  const [spotifyToken, setSpotifyToken] =
+    useState<SpotifyApi.SpotifyToken | null>(() => SpotifyApi.makeToken());
+  const [playlistName, setPlaylistName] = useState<string>('');
+  const [playlistId, setPlaylistId] = useState<string>('');
+  const [uris, setUris] = useState<string>(''); // I'm being lazy since I don't want to create multiple inputs with more complex state, we don't really want a csv here, we want an array of URIs (see SpotifyApi.createPlaylist function signature), but I'm calling `.split(",")` later to get that string[]
 
   return (
     <>
       {SpotifyApi.isValidToken(spotifyToken) ? (
         <>
-          <div style={{display: "block", margin: 5}}>
+          <div style={{ display: 'block', margin: 5 }}>
             <Spotify.LogoutButton callback={() => setSpotifyToken(null)} />
           </div>
-          <div style={{display: "block", margin: 5}}>
+          <div style={{ display: 'block', margin: 5 }}>
             <Spotify.LogUserPlaylistsButton token={spotifyToken} />
           </div>
-          <div style={{display: "block", margin: 5}}>
+          <div style={{ display: 'block', margin: 5 }}>
             <label>
-              {"Playlist Name: "}
-              <input type={"text"} onChange={e => setPlaylistName(e.target.value)} /> {/* purposely an uncontrolled component, leaving behind the visible but non-functional playlist name text is is nice ux for this particular example */}
-              {" "}
+              {'Playlist Name: '}
+              <input
+                type={'text'}
+                onChange={(e) => setPlaylistName(e.target.value)}
+              />{' '}
+              {/* purposely an uncontrolled component, leaving behind the visible but non-functional playlist name text is is nice ux for this particular example */}{' '}
             </label>
             <Spotify.CreatePlaylistButton
               token={spotifyToken}
               name={playlistName}
               callback={(r) => {
                 setPlaylistId(r.id);
-                setPlaylistName("");
+                setPlaylistName('');
               }}
             />
           </div>
-          <div style={{display: "block", margin: 5}}>
+          <div style={{ display: 'block', margin: 5 }}>
             <label>
-              {"Playlist ID: "}
-              <input type={"text"} value={playlistId} onChange={e => setUris(e.target.value)} />
+              {'Playlist ID: '}
+              <input
+                type={'text'}
+                value={playlistId}
+                onChange={(e) => setUris(e.target.value)}
+              />
             </label>
             <label>
-              {"Track URI CSV: "}
-              <input type={"text"} value={uris} onChange={e => setUris(e.target.value)} />
+              {'Track URI CSV: '}
+              <input
+                type={'text'}
+                value={uris}
+                onChange={(e) => setUris(e.target.value)}
+              />
             </label>
             <Spotify.AddTracksToPlaylistButton
               token={spotifyToken}
               playlistId={playlistId}
-              uris={uris.split(",").filter(s => !!s)}
-              callback={_ => setUris("")}
+              uris={uris.split(',').filter((s) => !!s)}
+              callback={(_) => setUris('')}
             />
           </div>
 
-          <span>Example Track URI CSV (copy and paste this into the input field):</span>
-          <span style={{display: "block"}}>spotify:track:4YEU9N2XAE0DfUwxWI5ijA,spotify:track:5GPhq2qHJgSQalqCp0RccS,spotify:track:13NiyfKg0aELrTWvgVL7eH</span>
+          <span>
+            Example Track URI CSV (copy and paste this into the input field):
+          </span>
+          <span style={{ display: 'block' }}>
+            spotify:track:4YEU9N2XAE0DfUwxWI5ijA,spotify:track:5GPhq2qHJgSQalqCp0RccS,spotify:track:13NiyfKg0aELrTWvgVL7eH
+          </span>
         </>
       ) : (
-        <Spotify.LoginButton clientId={spotifyClientId}/>
+        <Spotify.LoginButton clientId={spotifyClientId} />
       )}
     </>
   );
@@ -79,13 +93,13 @@ const parseCSV = (csv: string) => {
     const data = line.split(','); // TODO BUG: what if the artist/track/album contains a comma? The line splitting breaks. I will need to eliminate or escape commas in my api.
     if (header.length !== data.length) continue; // this is a temporary hack until I sort out my comma issue
     const track = {};
-    for (let i=0; i<data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
       track[header[i]] = data[i];
     }
     tracks.push(track);
   }
   return tracks;
-}
+};
 
 const tracks2places = (tracks) => {
   const places = {};
@@ -100,7 +114,8 @@ const tracks2places = (tracks) => {
           trackIds: new Set([track.id]),
           // it'd be even better to outer shell or more simply would be the center point and radius, but lat+lng of a random sample is easily good enough for now.
           lat: parseFloat(track.lat),
-          lng: parseFloat(track.lng)};
+          lng: parseFloat(track.lng),
+        };
       }
     }
   }
@@ -131,7 +146,8 @@ const App: React.FC = () => {
 
   return (
     <>
-      <ExampleSpotifyUsage />
+      <Nav />
+      <Tutorial />
       {tracks ? (
         <>
           {/* <Nav /> */}
@@ -141,6 +157,8 @@ const App: React.FC = () => {
       ) : (
         <Loading />
       )}
+
+      <ExampleSpotifyUsage />
     </>
   );
 };
