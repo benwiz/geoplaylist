@@ -1,8 +1,12 @@
 import { styled } from '@stitches/react';
 import GoogleTutorial from './GoogleTutorial';
+import SpotifyTutorial from './SpotifyTutorial';
 
 const Container = styled('div', {
+  display: 'flex',
+  justifyContent: 'space-around',
   padding: '0',
+  width: '100%',
 });
 
 function Tutorial() {
@@ -10,6 +14,7 @@ function Tutorial() {
 
   return (
     <Container>
+      <SpotifyTutorial />
       <GoogleTutorial />
     </Container>
   );

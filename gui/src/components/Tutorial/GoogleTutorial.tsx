@@ -1,7 +1,11 @@
 import { styled } from '@stitches/react';
+import withContainer from '../HOC/withContainer';
 
 const Container = styled('div', {
-  padding: '0',
+  // padding: '40px',
+  img: {
+    width: '100%',
+  },
 });
 
 function GoogleTutorial() {
@@ -15,4 +19,4 @@ function GoogleTutorial() {
   );
 }
 
-export default GoogleTutorial;
+export default withContainer(GoogleTutorial);

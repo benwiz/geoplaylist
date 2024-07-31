@@ -5,6 +5,10 @@ const Container = styled('div', {
   display: 'flex',
   justifyContent: 'flex-start',
   height: '40px',
+  padding: '5px',
+  img: {
+    height: '100%',
+  },
 });
 
 function Nav() {
@@ -17,11 +21,10 @@ function Nav() {
       >
         <img
           src={reactLogo}
-          className='logo react'
           alt='Placehoder logo'
         />
       </a>
-      <div className='banner_text'>
+      <div>
         <p>oh wow, what a nav cmpt</p>
       </div>
     </Container>

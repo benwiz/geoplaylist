@@ -1,11 +1,11 @@
 'use strict';
 import React, { useState, useEffect, useMemo } from 'react';
-import fetchAsciiArt from './util/asciiFetch';
+// import fetchAsciiArt from './util/asciiFetch';
 import SpotifyApi from './util/spotifyApi';
 import Loading from './components/Loading/Loading';
 import Nav from './components/Nav/Nav';
 import Spotify from './components/Spotify/Spotify';
-import Upload from './components/Upload/Upload';
+// import Upload from './components/Upload/Upload';
 import Map from './components/Map/Map';
 import Tutorial from './components/Tutorial';
 
