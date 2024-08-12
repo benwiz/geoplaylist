@@ -1,4 +1,5 @@
 import { styled } from '@stitches/react';
+// import Logo from './Logo';
 import Logo from './Logo';
 
 const CanvasContainer = styled('div', {
