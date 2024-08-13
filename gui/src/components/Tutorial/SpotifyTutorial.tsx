@@ -12,8 +12,8 @@ function SpotifyTutorial() {
   return (
     <Container>
       <img
-        src='/googleLocationDataTutorial.gif'
-        alt='spotify-dl-personal-data-gif'
+        src='/spotifyTutorial.gif'
+        alt='spotify-dl-instructions-gif'
       />
     </Container>
   );

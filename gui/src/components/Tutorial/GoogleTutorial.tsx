@@ -13,7 +13,7 @@ function GoogleTutorial() {
     <Container>
       <img
         src='/googleLocationDataTutorial.gif'
-        alt='spotify-dl-personal-data-gif'
+        alt='google-dl-instructions-gif'
       />
     </Container>
   );

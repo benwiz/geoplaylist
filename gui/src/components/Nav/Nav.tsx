@@ -32,9 +32,7 @@ function Nav() {
           // link back to homepage
           href='./'
           target='_blank'
-        >
-          {/* <Logo /> */}
-        </a>
+        ></a>
         <div>
           <p>oh wow, what a nav cmpt</p>
         </div>

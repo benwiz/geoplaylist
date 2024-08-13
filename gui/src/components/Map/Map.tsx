@@ -2,7 +2,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { styled } from '@stitches/react';
 
 const ContainerDiv = styled('div', {
-  height: '800px',
+  height: '644px',
   padding: '20px',
 
   borderStyle: 'solid',
