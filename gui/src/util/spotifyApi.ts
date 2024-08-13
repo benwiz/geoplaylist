@@ -266,7 +266,7 @@ type SpotifyCreatePlaylistResponse = {
 };
 
 /** https://developer.spotify.com/documentation/web-api/reference/create-playlist **/
-const createPlaylist = (token: SpotifyToken, name: string): Promise<CreatePlaylistResponse> => {
+const createPlaylist = (token: SpotifyToken, name: string): Promise<SpotifyCreatePlaylistResponse> => {
   return fetch("https://api.spotify.com/v1/me/playlists", {
     method: "POST",
     headers: {
