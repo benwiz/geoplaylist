@@ -19,6 +19,14 @@ api/resources/google-location-records-scrubbed.json
 api/resources/lastfm-recenttracks-20231130.json
 ```
 
+### CLI
+
+Clojure and `sciclj` are really not ideal for a cli tool. But could be useful. See the following executable for details.
+
+```
+./bin/train.sh
+```
+
 ## Server
 
 The server will be hosted at `localhost:8008` so your main endpoint will be `POST http://localhost:8008/train`

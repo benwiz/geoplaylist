@@ -1,5 +1,8 @@
 (ns com.benwiz.geoplaylist
-  (:require [com.benwiz.geoplaylist.handlers :as handlers]
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]
+            [com.benwiz.geoplaylist.analyzer :as analyzer]
+            [com.benwiz.geoplaylist.handlers :as handlers]
             [muuntaja.core :as m]
             [reitit.coercion.malli]
             [reitit.dev.pretty :as pretty]
@@ -10,6 +13,7 @@
             [reitit.interceptor.sieppari :as s]
             [reitit.ring :as ring]
             [ring.adapter.jetty :as jetty]
+            [scicloj.ml.dataset :as ds]
             [sieppari.async.manifold] ;; needed for manifold
             [simple-cors.reitit.interceptor :as cors])
   (:import (java.io File)))
@@ -110,3 +114,27 @@
     (prn (str "Starting geoplaylist-server on port " port
               (when args (str " with args:" args))))
     (restart server (merge {:port port :join? true} args))))
+
+(defn cli
+  "Shim to com.benwiz.geoplaylist.analyzer/train wrapping filepaths as file."
+  [& {:as args}]
+  (println (str "Executing com.benwiz.geoplaylist.analyzer/train with args " (pr-str args)))
+  (let [parsed-args
+        (into {}
+              (map (fn [[k v]]
+                     (let [v (str v)]
+                       [k
+                        (case k
+                          :out                   v
+                          :google-locations-file (io/resource v)
+                          :spotify-streaming-history-extended-files
+                          (into []
+                                (map io/resource)
+                                (str/split v #"\|")))])))
+              args)]
+    (clojure.pprint/pprint {:parsed-args parsed-args})
+    (println "Start training...")
+    (-> (analyzer/train parsed-args)
+        (ds/write! (:out parsed-args)))
+    (println (str "Wrote file to " (:out parsed-args))))
+  )
