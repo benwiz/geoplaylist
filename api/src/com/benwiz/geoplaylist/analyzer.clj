@@ -89,6 +89,19 @@
 (def results-validator (m/validator results-schema))
 (def results-explainer (m/explainer results-schema))
 
+(defn manual-locations
+  [manual-locations-file]
+  (->> (ds/dataset (io/file manual-locations-file))
+       ds/rows
+       (into []
+             (mapcat (fn [[lat lng start end]]
+                       [{:lat       lat
+                         :lng       lng
+                         :timestamp (.toOffsetDateTime start)}
+                        {:lat       lat
+                         :lng       lng
+                         :timestamp (.toOffsetDateTime end)}])))))
+
 (defn get-google-location-records
   [readable]
   (cheshire/parse-stream
@@ -254,8 +267,11 @@
   [{:keys [spotify-streaming-history-extended-files
            spotify-streaming-history-short-files
            lastfm-recenttracks-file
-           google-locations-file]}]
-  (let [locations        (google-locations (get-google-location-records google-locations-file))
+           google-locations-file
+           manual-locations-file]}]
+  (let [locations        (cond
+                           google-locations-file (google-locations (get-google-location-records google-locations-file))
+                           manual-locations-file (manual-locations manual-locations-file))
         tracks           (cond
                            spotify-streaming-history-extended-files (spotify-tracks-extended spotify-streaming-history-extended-files)
                            spotify-streaming-history-short-files    (spotify-tracks-short spotify-streaming-history-short-files)
@@ -282,6 +298,7 @@
            spotify-streaming-history-short-files
            lastfm-recenttracks-file
            google-locations-file
+           manual-locations-file
            n]
     :or   {n 10}
     :as   args}]
@@ -295,7 +312,9 @@
                    (nil? spotify-streaming-history-short-files)
                    (some? lastfm-recenttracks-file)))
           "One of spotify-streaming-history-extended-files, spotify-streaming-history-short-files, or lastfm-recenttracks-file is allowed.")
-  (assert google-locations-file)
+  (assert (or google-locations-file
+              manual-locations-file)
+          "One of google-locations-fgile or manual-locations-file")
   (let [[locations tracks] (parse-inputs args)
         locations          (into [] (reverse (sort-by :timestamp locations))) ;; oldest to newest, should probably use xf/sort-by during the original parsing xform
         tracks             (into [] (reverse (sort-by :timestamp tracks))) ;; oldest to newest, should probably use xf/sort-by during the original parsing xform

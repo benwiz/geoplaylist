@@ -127,6 +127,7 @@
                         (case k
                           :out                   v
                           :google-locations-file (io/resource v)
+                          :manual-locations-file (io/resource v)
                           :spotify-streaming-history-extended-files
                           (into []
                                 (map io/resource)
