@@ -31,6 +31,6 @@ See `api/README.md`
 # TODO
 
 - API
-  - ingest extended spotify history
+  - inject custom location ranges `[lat,lng,start,end]` csv... but this makes the lat,lng almost arbitrary.
   - finish training properly
 - GUI
