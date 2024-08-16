@@ -298,7 +298,59 @@ const addTracksToPlaylist = (token: SpotifyToken, playlistId: string, uris: stri
   }).then((r) => r.json());
 };
 
+type Track = {
+  id: string;
+};
+
+async function addManyTracksToPlaylist( token: SpotifyToken, playlistId: string, tracks: Track[]
+) {
+  const batchSize = 100;
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  for (let i = 0; i < tracks.length; i += batchSize) {
+    const batch = tracks.slice(i, i + batchSize);
+    const uris = batch.map(track => `spotify:track:${track.id}`);
+
+    try {
+      const response = await fetch(
+        `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token.accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ uris })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`Added tracks ${i + 1} to ${i + batch.length}`, data);
+
+      // Add a small delay to avoid rate limiting
+      await delay(1000);
+    } catch (error) {
+      console.error(`Error adding tracks ${i + 1} to ${i + batch.length}:`, error);
+      // Implement retry logic here if needed
+    }
+  }
+}
+
+//? Usage
+// const playlistId = 'your_playlist_id';
+// const tracks: Track[] = [
+//   { id: 'track_id_1' },
+//   { id: 'track_id_2' },
+//?   ... thousands more
+// ];
+
+// addManyTracksToPlaylist(playlistId, tracks, accessToken);
+
 export default {
   makeToken, isValidToken, redirect, clearToken, // auth
-  getUserPlaylists, createPlaylist, addTracksToPlaylist // playlist management
+  getUserPlaylists, createPlaylist, addTracksToPlaylist, addManyTracksToPlaylist // playlist management
 };
