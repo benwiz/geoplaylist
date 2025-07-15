@@ -8,8 +8,8 @@ If you Scrobble your music into last.fm you can download your play history here 
 
 # Spotify APP Credentials (needed for Spotify Web API)
 
-Client id `641da771c201429da8ec99a659aa5ff6`
-Client secret `3eac5083da4d4be0804ebdb0cf116c01` (KEEP THIS SECRET, I'll scrub it from git before we release publicly)
+Client id `...`
+Client secret `...`
 
 # API
 
